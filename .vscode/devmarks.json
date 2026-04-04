@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "highlights": [
+    {
+      "id": "69c36193-5b74-4d53-b0bc-602dc4912c73",
+      "filePath": "src/sidebarProvider.ts",
+      "codeSnippet": "\n    webviewView.webview.options = {\n      enableScripts: true,\n      localResourceRoots: [this._extensionUri],\n    };\n",
+      "codeHash": "0e86556b360967dc939faae701edaedd95a18e1867d4734508354625a335f1d3",
+      "tag": "Optimization",
+      "color": "#FF9F43",
+      "createdAt": "2026-04-04T17:49:07.872Z",
+      "updatedAt": "2026-04-04T17:49:07.872Z"
+    },
+    {
+      "id": "d638c90d-7006-4620-86bb-213f285b26c8",
+      "filePath": "src/sidebarProvider.ts",
+      "codeSnippet": "    /* ── Filter Bar ── */\n    .filter-bar {\n      padding: 8px 12px;\n      display: flex;\n      gap: 6px;\n      flex-shrink: 0;\n      border-bottom: 1px solid var(--dm-border);\n    }",
+      "codeHash": "738b8e64b1eced6d62c87286d85b7af8ada6c90545b871c341e2477c0f19adb7",
+      "tag": "Logic",
+      "color": "#C9B8E8",
+      "createdAt": "2026-04-04T17:49:23.098Z",
+      "updatedAt": "2026-04-04T17:49:23.098Z"
+    }
+  ]
+}

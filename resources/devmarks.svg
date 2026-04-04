@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
+  <!-- Bookmark shape -->
+  <path d="M6 2h12a2 2 0 0 1 2 2v18l-8-4-8 4V4a2 2 0 0 1 2-2z"
+        fill="#89b4fa" opacity="0.9"/>
+  <!-- Highlight stripe -->
+  <rect x="8" y="7" width="8" height="2.5" rx="1.25"
+        fill="#FFD700" opacity="0.95"/>
+  <!-- Second stripe -->
+  <rect x="8" y="11" width="5" height="2" rx="1"
+        fill="#f38ba8" opacity="0.85"/>
+</svg>

@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "highlights": [
+    {
+      "id": "9b6405d6-45ec-439a-b707-a2c8e945493d",
+      "filePath": "src/decorationManager.ts",
+      "codeSnippet": "  // Parse color to create semi-transparent background + ruler marker\n  const decorationType = vscode.window.createTextEditorDecorationType({\n    backgroundColor: hexToRgba(color, 0.28),\n    border: `1px solid ${hexToRgba(color, 0.7)}`,\n    borderRadius: \"2px\",\n    overviewRulerColor: color,\n    overviewRulerLane: vscode.OverviewRulerLane.Right,\n    // Subtle gutter indicator\n    gutterIconPath: undefined,\n    // Light theme gets a slightly darker tint\n    light: {\n      backgroundColor: hexToRgba(color, 0.22),\n      border: `1px solid ${hexToRgba(color, 0.6)}`,\n    },\n    dark: {\n      backgroundColor: hexToRgba(color, 0.30),\n      border: `1px solid ${hexToRgba(color, 0.8)}`,\n    },\n  });\n\n  decorationTypeCache.set(color, decorationType);\n  return decorationType;\n}",
+      "codeHash": "16e022b17bbab43885aa06dc3223ca26d26dd4d6575fdc32bf529b6e6405969c",
+      "tag": "Optimization",
+      "color": "#50FA7B",
+      "createdAt": "2026-04-04T18:25:12.177Z",
+      "updatedAt": "2026-04-04T18:25:12.177Z"
+    },
+    {
+      "id": "abb437a5-ec5f-4ba3-b8bf-56b2d1ff925a",
+      "filePath": "src/commands.ts",
+      "codeSnippet": "function getWorkspaceRelativePath(uri: vscode.Uri): string {\n  const folders = vscode.workspace.workspaceFolders;\n  if (folders && folders.length > 0) {\n    const rel = vscode.workspace.asRelativePath(uri, false);\n    return rel;\n  }\n  return uri.fsPath;\n}\n",
+      "codeHash": "efd34fc6581be2641f89a8e5688ec31f569c16ff9dadb177517af4109913a341",
+      "tag": "Bug",
+      "color": "#FF6B6B",
+      "createdAt": "2026-04-04T18:25:28.385Z",
+      "updatedAt": "2026-04-04T18:25:28.385Z"
+    }
+  ]
+}
