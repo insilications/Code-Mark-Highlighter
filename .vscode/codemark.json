@@ -10,16 +10,6 @@
       "color": "#50FA7B",
       "createdAt": "2026-04-04T18:25:12.177Z",
       "updatedAt": "2026-04-04T18:25:12.177Z"
-    },
-    {
-      "id": "abb437a5-ec5f-4ba3-b8bf-56b2d1ff925a",
-      "filePath": "src/commands.ts",
-      "codeSnippet": "function getWorkspaceRelativePath(uri: vscode.Uri): string {\n  const folders = vscode.workspace.workspaceFolders;\n  if (folders && folders.length > 0) {\n    const rel = vscode.workspace.asRelativePath(uri, false);\n    return rel;\n  }\n  return uri.fsPath;\n}\n",
-      "codeHash": "efd34fc6581be2641f89a8e5688ec31f569c16ff9dadb177517af4109913a341",
-      "tag": "Bug",
-      "color": "#FF6B6B",
-      "createdAt": "2026-04-04T18:25:28.385Z",
-      "updatedAt": "2026-04-04T18:25:28.385Z"
     }
   ]
 }
