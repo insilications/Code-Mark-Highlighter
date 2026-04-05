@@ -29,6 +29,7 @@ Open the **DevMarks** panel in the Activity Bar to see all highlights across you
 | Shortcut | Action |
 |---|---|
 | `Ctrl+Alt+H` | Highlight selected code |
+| `Ctrl+Alt+R` | Remove highlight at cursor |
 | `Ctrl+Alt+N` | Jump to next highlight in file |
 | `Ctrl+Alt+P` | Jump to previous highlight in file |
 
@@ -75,8 +76,8 @@ Each entry:
 
 | Setting | Default | Description |
 |---|---|---|
-| `devmarks.storageFile` | `.vscode/codemark.json` | Path (relative to workspace root) for the storage file |
-| `devmarks.fuzzyMatchThreshold` | `0.75` | Similarity threshold (0.5–1.0) for fuzzy content matching |
+| `codemark.storageFile` | `.vscode/codemark.json` | Path (relative to workspace root) for the storage file |
+| `codemark.fuzzyMatchThreshold` | `0.75` | Similarity threshold (0.5–1.0) for fuzzy content matching |
 
 ---
 

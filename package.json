@@ -2,7 +2,7 @@
   "name": "code-mark-highlighter",
   "displayName": "Code Mark Highlighter",
   "description": "Highlight code blocks with custom colors and tags. Highlights persist based on code content — not line numbers — and survive edits and restarts.",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "publisher": "KSHYKR",
   "license": "MIT",
   "repository": {
@@ -134,6 +134,12 @@
         "key": "ctrl+alt+h",
         "mac": "cmd+alt+h",
         "when": "editorHasSelection"
+      },
+      {
+        "command": "codemark.removeHighlight",
+        "key": "ctrl+alt+r",
+        "mac": "cmd+alt+r",
+        "when": "editorTextFocus"
       }
     ],
     "configuration": {
