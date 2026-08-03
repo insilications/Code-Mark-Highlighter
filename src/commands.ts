@@ -3,6 +3,7 @@
 
 import * as vscode from "vscode";
 import * as crypto from "crypto";
+import litedent from 'litedent';
 import { Highlight, PRESET_COLORS, DEFAULT_TAGS } from "./types";
 import {
   loadHighlights,
@@ -110,14 +111,38 @@ export async function highlightCode(
   }
 
   const selection = editor.selection;
-  if (selection.isEmpty) {
-    vscode.window.showWarningMessage("Code Mark: Please select some code first.");
-    return;
+  let snippet = "";
+  let targetRange: vscode.Range;
+
+  if (!selection.isEmpty) {
+    // Standard behavior: use the user's explicit selection
+    targetRange = new vscode.Range(selection.start, selection.end);
+    snippet = editor.document.getText(targetRange);
+  } else {
+    // Fallback behavior: grab current line + up to 3 next lines
+    const startLine = selection.active.line;
+    const maxLine = Math.min(startLine + 3, editor.document.lineCount - 1);
+    let endLine = startLine;
+
+    // Find the furthest non-empty line within our 4-line window
+    for (let i = startLine; i <= maxLine; i++) {
+      if (!editor.document.lineAt(i).isEmptyOrWhitespace) {
+        endLine = i;
+      }
+    }
+
+    // Create a contiguous range from the start line to the end of the last valid line
+    const startPos = new vscode.Position(startLine, 0);
+    const endLineLength = editor.document.lineAt(endLine).text.length;
+    const endPos = new vscode.Position(endLine, endLineLength);
+
+    targetRange = new vscode.Range(startPos, endPos);
+    snippet = editor.document.getText(targetRange);
   }
 
-  const snippet = editor.document.getText(selection);
+  // If the extracted snippet is entirely whitespace (e.g., user clicked on a block of empty lines)
   if (!snippet.trim()) {
-    vscode.window.showWarningMessage("Code Mark: Selection is empty.");
+    vscode.window.showWarningMessage("Code Mark: Selection and surrounding lines are empty.");
     return;
   }
 
@@ -133,11 +158,13 @@ export async function highlightCode(
     id: uuidv4(),
     filePath: getWorkspaceRelativePath(editor.document.uri),
     codeSnippet: snippet,
+    codeSnippetDisplay: litedent(snippet),
     codeHash: hashText(snippet),
     tag: tag || "",
     color,
     createdAt: now,
     updatedAt: now,
+    range: targetRange,
   };
 
   addHighlight(context, highlight);
@@ -148,6 +175,78 @@ export async function highlightCode(
 
   sidebar.refresh();
   vscode.window.setStatusBarMessage(`$(bookmark) Code Mark: Highlight added — [${tag || "No tag"}]`, 3000);
+}
+
+// ─── Command: Quick Highlight Code ──────────────────────────────────────────────────
+
+export async function highlightCodeQuick(
+  context: vscode.ExtensionContext,
+  sidebar: SidebarProvider
+): Promise<void> {
+  const editor = vscode.window.activeTextEditor;
+  if (!editor) {
+    vscode.window.showWarningMessage("Code Mark: No active editor.");
+    return;
+  }
+
+  const selection = editor.selection;
+  let snippet = "";
+  let targetRange: vscode.Range;
+
+  if (!selection.isEmpty) {
+    // Standard behavior: use the user's explicit selection
+    targetRange = new vscode.Range(selection.start, selection.end);
+    snippet = editor.document.getText(targetRange);
+  } else {
+    // Fallback behavior: grab current line + up to 3 next lines
+    const startLine = selection.active.line;
+    const maxLine = Math.min(startLine + 3, editor.document.lineCount - 1);
+    let endLine = startLine;
+
+    // Find the furthest non-empty line within our 4-line window
+    for (let i = startLine; i <= maxLine; i++) {
+      if (!editor.document.lineAt(i).isEmptyOrWhitespace) {
+        endLine = i;
+      }
+    }
+
+    // Create a contiguous range from the start line to the end of the last valid line
+    const startPos = new vscode.Position(startLine, 0);
+    const endLineLength = editor.document.lineAt(endLine).text.length;
+    const endPos = new vscode.Position(endLine, endLineLength);
+
+    targetRange = new vscode.Range(startPos, endPos);
+    snippet = editor.document.getText(targetRange);
+  }
+
+  // If the extracted snippet is entirely whitespace (e.g., user clicked on a block of empty lines)
+  if (!snippet.trim()) {
+    vscode.window.showWarningMessage("Code Mark: Selection and surrounding lines are empty.");
+    return;
+  }
+
+  const now = new Date().toISOString();
+  const highlight: Highlight = {
+    id: uuidv4(),
+    filePath: getWorkspaceRelativePath(editor.document.uri),
+    codeSnippet: snippet,
+    codeSnippetDisplay: litedent(snippet),
+    codeHash: hashText(snippet),
+    tag: "",
+    color: "#f7db00",
+    createdAt: now,
+    updatedAt: now,
+    range: targetRange,
+  };
+
+  addHighlight(context, highlight);
+
+  // Reapply all highlights to this editor
+  const fileHighlights = getHighlightsForFile(context, highlight.filePath);
+  applyHighlightsToEditor(editor, fileHighlights, getFuzzyThreshold());
+
+  sidebar.refresh();
+  vscode.window.setStatusBarMessage(`$(bookmark) Code Mark: Highlight added`, 3000);
 }
 
 // ─── Command: Remove Highlight ────────────────────────────────────────────────
@@ -169,7 +268,7 @@ export async function removeHighlightCmd(
   }
 
   const confirm = await vscode.window.showQuickPick(["Yes, remove it", "Cancel"], {
-    placeHolder: `Remove highlight: "${target.tag || target.codeSnippet.slice(0, 40)}..."?`,
+    placeHolder: `Remove highlight: "${target.tag || target.codeSnippetDisplay.slice(0, 40)}..."?`,
     title: "Code Mark — Remove Highlight",
   });
   if (confirm !== "Yes, remove it") { return; }

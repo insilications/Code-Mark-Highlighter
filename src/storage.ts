@@ -4,21 +4,41 @@
 import * as vscode from "vscode";
 import * as fs from "fs";
 import * as path from "path";
-import { Highlight, HighlightStore } from "./types";
+import { Highlight, HighlightStore, SerializedHighlight } from "./types";
 
 const STORE_VERSION = 1;
 const WS_STATE_KEY = "codemark.highlights";
 
+function toSerialized(h: Highlight): SerializedHighlight {
+  return {
+    ...h,
+    range: [
+      h.range.start.line,
+      h.range.start.character,
+      h.range.end.line,
+      h.range.end.character,
+    ],
+  };
+}
+
+function fromSerialized(s: SerializedHighlight): Highlight {
+  return {
+    ...s,
+    range: new vscode.Range(s.range[0], s.range[1], s.range[2], s.range[3]),
+  };
+}
+
 function getStorageFilePath(): string | null {
   const folders = vscode.workspace.workspaceFolders;
-  if (!folders || folders.length === 0) { return null; }
+  if (!folders || folders.length === 0) {
+    return null;
+  }
   const cfg = vscode.workspace.getConfiguration("codemark");
   const rel = cfg.get<string>("storageFile", ".vscode/codemark.json");
   return path.join(folders[0].uri.fsPath, rel);
 }
 
 export function loadHighlights(context: vscode.ExtensionContext): Highlight[] {
-  // Primary: try JSON file
   const filePath = getStorageFilePath();
   if (filePath && fs.existsSync(filePath)) {
     try {
@@ -27,44 +47,57 @@ export function loadHighlights(context: vscode.ExtensionContext): Highlight[] {
       if (Array.isArray(store.highlights)) {
         // Mirror to workspaceState for fast access
         context.workspaceState.update(WS_STATE_KEY, store.highlights);
-        return store.highlights;
+        // Rehydrate back to runtime instances
+        return store.highlights.map(fromSerialized);
       }
     } catch {
       // Fall through to workspace state
     }
   }
+
   // Fallback: workspaceState
-  return context.workspaceState.get<Highlight[]>(WS_STATE_KEY) ?? [];
+  const state =
+    context.workspaceState.get<SerializedHighlight[]>(WS_STATE_KEY) ?? [];
+  return state.map(fromSerialized);
 }
 
 export function saveHighlights(
   context: vscode.ExtensionContext,
-  highlights: Highlight[]
+  highlights: Highlight[],
 ): void {
+  // Serialize before saving to state to prevent prototype stripping issues
+  const serialized = highlights.map(toSerialized);
+
   // Update in-memory state immediately
-  context.workspaceState.update(WS_STATE_KEY, highlights);
+  context.workspaceState.update(WS_STATE_KEY, serialized);
 
   // Write JSON file
   const filePath = getStorageFilePath();
-  if (!filePath) { return; }
+  if (!filePath) {
+    return;
+  }
 
-  // Ensure .vscode directory exists
   const dir = path.dirname(filePath);
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
   }
 
-  const store: HighlightStore = { version: STORE_VERSION, highlights };
+  const store: HighlightStore = {
+    version: STORE_VERSION,
+    highlights: serialized,
+  };
   try {
     fs.writeFileSync(filePath, JSON.stringify(store, null, 2), "utf-8");
   } catch (err) {
-    vscode.window.showErrorMessage(`Code Mark: Failed to save highlights — ${err}`);
+    vscode.window.showErrorMessage(
+      `Code Mark: Failed to save highlights — ${err}`,
+    );
   }
 }
 
 export function getHighlightsForFile(
   context: vscode.ExtensionContext,
-  filePath: string
+  filePath: string,
 ): Highlight[] {
   const all = loadHighlights(context);
   return all.filter((h) => h.filePath === filePath);
@@ -72,7 +105,7 @@ export function getHighlightsForFile(
 
 export function addHighlight(
   context: vscode.ExtensionContext,
-  highlight: Highlight
+  highlight: Highlight,
 ): void {
   const all = loadHighlights(context);
   all.push(highlight);
@@ -81,16 +114,19 @@ export function addHighlight(
 
 export function removeHighlight(
   context: vscode.ExtensionContext,
-  id: string
+  id: string,
 ): void {
   const all = loadHighlights(context);
-  saveHighlights(context, all.filter((h) => h.id !== id));
+  saveHighlights(
+    context,
+    all.filter((h) => h.id !== id),
+  );
 }
 
 export function updateHighlight(
   context: vscode.ExtensionContext,
   id: string,
-  patch: Partial<Highlight>
+  patch: Partial<Highlight>,
 ): void {
   const all = loadHighlights(context);
   const idx = all.findIndex((h) => h.id === id);
@@ -102,8 +138,11 @@ export function updateHighlight(
 
 export function removeHighlightsForFile(
   context: vscode.ExtensionContext,
-  filePath: string
+  filePath: string,
 ): void {
   const all = loadHighlights(context);
-  saveHighlights(context, all.filter((h) => h.filePath !== filePath));
+  saveHighlights(
+    context,
+    all.filter((h) => h.filePath !== filePath),
+  );
 }

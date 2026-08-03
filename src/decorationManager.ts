@@ -13,29 +13,19 @@ const decorationTypeCache = new Map<string, vscode.TextEditorDecorationType>();
  * Decoration types are expensive — we reuse them.
  */
 export function getOrCreateDecorationType(
-  color: string
+  color: string,
 ): vscode.TextEditorDecorationType {
   const cached = decorationTypeCache.get(color);
-  if (cached) { return cached; }
+  if (cached) {
+    return cached;
+  }
 
   // Parse color to create semi-transparent background + ruler marker
   const decorationType = vscode.window.createTextEditorDecorationType({
-    backgroundColor: hexToRgba(color, 0.28),
-    border: `1px solid ${hexToRgba(color, 0.7)}`,
-    borderRadius: "2px",
-    overviewRulerColor: color,
-    overviewRulerLane: vscode.OverviewRulerLane.Right,
-    // Subtle gutter indicator
-    gutterIconPath: undefined,
-    // Light theme gets a slightly darker tint
-    light: {
-      backgroundColor: hexToRgba(color, 0.22),
-      border: `1px solid ${hexToRgba(color, 0.6)}`,
-    },
-    dark: {
-      backgroundColor: hexToRgba(color, 0.30),
-      border: `1px solid ${hexToRgba(color, 0.8)}`,
-    },
+    borderWidth: "0 0 0 4px",
+    borderStyle: "solid",
+    borderColor: hexToRgba(color, 1.0),
+    isWholeLine: true
   });
 
   decorationTypeCache.set(color, decorationType);
@@ -49,14 +39,16 @@ export function getOrCreateDecorationType(
 export function applyHighlightsToEditor(
   editor: vscode.TextEditor,
   highlights: Highlight[],
-  fuzzyThreshold: number = 0.75
+  fuzzyThreshold: number = 0.75,
 ): void {
   // Clear all existing decorations first
   for (const [, decType] of decorationTypeCache) {
     editor.setDecorations(decType, []);
   }
 
-  if (highlights.length === 0) { return; }
+  if (highlights.length === 0) {
+    return;
+  }
 
   // Group by color
   const byColor = new Map<string, vscode.DecorationOptions[]>();
@@ -66,23 +58,18 @@ export function applyHighlightsToEditor(
       editor.document,
       h.codeSnippet,
       h.codeHash,
-      fuzzyThreshold
+      fuzzyThreshold,
     );
-    if (!range) { continue; }
+    if (!range) {
+      continue;
+    }
 
     if (!byColor.has(h.color)) {
       byColor.set(h.color, []);
     }
 
-    const hoverMsg = new vscode.MarkdownString(
-      `**Code Mark** — \`${h.tag || "No tag"}\`\n\n` +
-      `*${new Date(h.createdAt).toLocaleDateString()}*`
-    );
-    hoverMsg.isTrusted = true;
-
     byColor.get(h.color)!.push({
       range,
-      hoverMessage: hoverMsg,
     });
   }
 
@@ -119,7 +106,7 @@ export function disposeAllDecorations(): void {
 export function findHighlightAtCursor(
   editor: vscode.TextEditor,
   highlights: Highlight[],
-  fuzzyThreshold: number = 0.75
+  fuzzyThreshold: number = 0.75,
 ): Highlight | undefined {
   const cursorPos = editor.selection.active;
 
@@ -128,7 +115,7 @@ export function findHighlightAtCursor(
       editor.document,
       h.codeSnippet,
       h.codeHash,
-      fuzzyThreshold
+      fuzzyThreshold,
     );
     if (range && range.contains(cursorPos)) {
       return h;

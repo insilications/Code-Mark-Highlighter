@@ -12,13 +12,13 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
   constructor(
     private readonly _extensionUri: vscode.Uri,
     private readonly _context: vscode.ExtensionContext,
-    private readonly _onAction: (action: string, data: unknown) => void
+    private readonly _onAction: (action: string, data: unknown) => void,
   ) {}
 
   resolveWebviewView(
     webviewView: vscode.WebviewView,
     _ctx: vscode.WebviewViewResolveContext,
-    _token: vscode.CancellationToken
+    _token: vscode.CancellationToken,
   ): void {
     this._view = webviewView;
 
@@ -33,7 +33,9 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
   }
 
   public refresh(): void {
-    if (!this._view) { return; }
+    if (!this._view) {
+      return;
+    }
     const highlights = loadHighlights(this._context);
     this._view.webview.postMessage({ type: "update", highlights });
   }
@@ -44,13 +46,21 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
 
   private _setMessageListener(webview: vscode.Webview): void {
     webview.onDidReceiveMessage(
-      async (msg: { command: string; id?: string; filePath?: string; snippet?: string; hash?: string }) => {
+      async (msg: {
+        command: string;
+        id?: string;
+        filePath?: string;
+        snippet?: string;
+        hash?: string;
+        jumpInSplitEditor?: boolean;
+      }) => {
         switch (msg.command) {
           case "jumpTo":
             this._onAction("jumpTo", {
               filePath: msg.filePath,
               snippet: msg.snippet,
-              hash: msg.hash,
+              codeHash: msg.hash,
+              jumpInSplitEditor: msg.jumpInSplitEditor,
             });
             break;
           case "delete":
@@ -72,7 +82,7 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
         }
       },
       undefined,
-      this._context.subscriptions
+      this._context.subscriptions,
     );
   }
 
@@ -83,7 +93,7 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'nonce-${nonce}'; script-src 'nonce-${nonce}';">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-${nonce}';">
   <title>Code Mark Highlighter</title>
   <style nonce="${nonce}">
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -191,12 +201,11 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
       display: flex;
       flex-direction: column;
       gap: 4px;
-      margin: 3px 8px;
-      padding: 8px 10px 8px 12px;
+      margin: 3px 3px;
+      padding: 8px 10px 8px 10px;
       background: var(--dm-input-bg);
       border: 1px solid var(--dm-border);
       border-radius: var(--dm-radius);
-      border-left-width: 3px;
       cursor: pointer;
       transition: background 0.12s, transform 0.1s;
       position: relative;
@@ -204,24 +213,20 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
     }
     .card:hover {
       background: var(--dm-hover);
-      transform: translateX(1px);
     }
 
     @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(4px); }
-      to   { opacity: 1; transform: translateY(0); }
+      from { opacity: 0; }
+      to   { opacity: 1; }
     }
 
     .card-top {
       display: flex;
       align-items: center;
-      gap: 6px;
-    }
-    .card-color-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      flex-shrink: 0;
+      gap: 2px;
+      justify-content: center;
+      align-content: center;
+      flex-wrap: nowrap;
     }
     .card-tag {
       font-size: 10px;
@@ -247,24 +252,18 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
       font-family: var(--dm-mono);
       font-size: 10.5px;
       color: var(--dm-muted);
-      white-space: pre;
-      overflow: hidden;
       text-overflow: ellipsis;
-      line-clamp: 2;
-      -webkit-line-clamp: 2;
-      display: -webkit-box;
-      -webkit-box-orient: vertical;
+      overflow: hidden;
+      white-space: preserve nowrap;
       background: var(--dm-bg);
-      padding: 4px 6px;
+      padding: 6px 3px;
       border-radius: 4px;
       border: 1px solid var(--dm-border);
-      max-height: 40px;
     }
 
     .card-actions {
       display: flex;
-      gap: 4px;
-      margin-top: 2px;
+      gap: 1px;
       opacity: 0;
       transition: opacity 0.15s;
     }
@@ -360,9 +359,6 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
     const filterTagEl = document.getElementById('filter-tag');
     const searchEl = document.getElementById('search');
 
-    // Notify extension we're ready
-    vscode.postMessage({ command: 'ready' });
-
     // Receive updates from extension
     window.addEventListener('message', (event) => {
       const msg = event.data;
@@ -444,12 +440,20 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
 
         card.addEventListener('click', (e) => {
           if (e.target.closest('.card-actions')) return;
-          vscode.postMessage({ command: 'jumpTo', filePath: h.filePath, snippet: h.codeSnippet, hash: h.codeHash });
+          if (e.altKey) {
+            vscode.postMessage({ command: 'jumpTo', filePath: h.filePath, snippet: h.codeSnippet, hash: h.codeHash, jumpInSplitEditor: true });
+          } else {
+            vscode.postMessage({ command: 'jumpTo', filePath: h.filePath, snippet: h.codeSnippet, hash: h.codeHash, jumpInSplitEditor: false });
+          }
         });
 
         card.querySelector('.btn-jump')?.addEventListener('click', (e) => {
           e.stopPropagation();
-          vscode.postMessage({ command: 'jumpTo', filePath: h.filePath, snippet: h.codeSnippet, hash: h.codeHash });
+          if (e.altKey) {
+            vscode.postMessage({ command: 'jumpTo', filePath: h.filePath, snippet: h.codeSnippet, hash: h.codeHash, jumpInSplitEditor: true });
+          } else {
+            vscode.postMessage({ command: 'jumpTo', filePath: h.filePath, snippet: h.codeSnippet, hash: h.codeHash, jumpInSplitEditor: false });
+          }
         });
         card.querySelector('.btn-tag')?.addEventListener('click', (e) => {
           e.stopPropagation();
@@ -467,24 +471,23 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
     }
 
     function renderCard(h) {
-      const snippet = h.codeSnippet.split('\\n').slice(0, 3).join('\\n').slice(0, 200);
-      const fileName = h.filePath.split(/[/\\\\]/).pop() || h.filePath;
-      const tagColor = h.color;
+      const snippet = esc(h.codeSnippetDisplay.split('\\n').slice(0, 12).join('\\n'));
+      const fileName = esc(h.filePath);
+      const tagColor = esc(h.color);
       const tagBg = hexToRgba(h.color, 0.18);
 
-      return \`<div class="card" data-id="\${esc(h.id)}" style="border-left-color:\${esc(h.color)}">
+      return \`<div class="card" data-id="\${esc(h.id)}" style="border: 1px solid \${tagColor};">
         <div class="card-top">
-          <span class="card-color-dot" style="background:\${esc(h.color)}"></span>
-          \${h.tag ? \`<span class="card-tag" style="background:\${tagBg};color:\${esc(tagColor)}">\${esc(h.tag)}</span>\` : ''}
-          <span class="card-file" title="\${esc(h.filePath)}">\${esc(fileName)}</span>
+          \${h.tag ? \`<span class="card-tag" style="background:\${tagBg};color:\${tagColor}">\${esc(h.tag)}</span>\` : ''}
+          <div class="card-actions">
+            <button class="btn btn-jump">↗ Jump</button>
+            <button class="btn btn-tag">🏷 Tag</button>
+            <button class="btn btn-color">🎨 Color</button>
+            <button class="btn btn-danger btn-delete">🗑</button>
+          </div>
+          <span class="card-file" title="\${fileName}">\${fileName}</span>
         </div>
-        <div class="card-snippet">\${esc(snippet)}</div>
-        <div class="card-actions">
-          <button class="btn btn-jump">↗ Jump</button>
-          <button class="btn btn-tag">🏷 Tag</button>
-          <button class="btn btn-color">🎨 Color</button>
-          <button class="btn btn-danger btn-delete">🗑</button>
-        </div>
+        <div class="card-snippet">\${snippet}</div>
       </div>\`;
     }
 
@@ -504,6 +507,9 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
       const b = parseInt(clean.substring(4, 6), 16);
       return \`rgba(\${r},\${g},\${b},\${alpha})\`;
     }
+
+    // Notify extension we're ready
+    vscode.postMessage({ command: 'ready' });
   </script>
 </body>
 </html>`;

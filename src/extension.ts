@@ -3,16 +3,25 @@
 
 import * as vscode from "vscode";
 import { SidebarProvider } from "./sidebarProvider";
-import { applyHighlightsToEditor, disposeAllDecorations } from "./decorationManager";
+import {
+  applyHighlightsToEditor,
+  disposeAllDecorations,
+} from "./decorationManager";
 import { getHighlightsForFile, loadHighlights } from "./storage";
 import {
   highlightCode,
+  highlightCodeQuick,
   removeHighlightCmd,
   editTagCmd,
   changeColorCmd,
   clearAllHighlightsCmd,
 } from "./commands";
-import { nextHighlight, prevHighlight, jumpToHighlight } from "./highlightNavigator";
+import {
+  nextHighlight,
+  prevHighlight,
+  jumpToHighlight,
+  type IJumpToHighlightArgs,
+} from "./highlightNavigator";
 
 let sidebar: SidebarProvider;
 
@@ -30,20 +39,23 @@ function getFuzzyThreshold(): number {
     .get<number>("fuzzyMatchThreshold", 0.75);
 }
 
+type onActionData = IJumpToHighlightArgs & { id: string };
+
 export function activate(context: vscode.ExtensionContext): void {
   // ── Sidebar Provider ──────────────────────────────────────────────────────
   sidebar = new SidebarProvider(
     context.extensionUri,
     context,
     async (action: string, data: unknown) => {
-      const d = data as Record<string, string>;
+      const d = data as onActionData;
       switch (action) {
         case "jumpTo":
           await jumpToHighlight(
             d.filePath,
             d.snippet,
-            d.hash,
-            getFuzzyThreshold()
+            d.codeHash,
+            getFuzzyThreshold(),
+            d.jumpInSplitEditor,
           );
           break;
         case "editTag":
@@ -56,33 +68,37 @@ export function activate(context: vscode.ExtensionContext): void {
           refreshActiveEditor(context);
           break;
       }
-    }
+    },
   );
 
   context.subscriptions.push(
     vscode.window.registerWebviewViewProvider(
       SidebarProvider.VIEW_ID,
       sidebar,
-      { webviewOptions: { retainContextWhenHidden: true } }
-    )
+      { webviewOptions: { retainContextWhenHidden: true } },
+    ),
   );
 
   // ── Commands ──────────────────────────────────────────────────────────────
   context.subscriptions.push(
     vscode.commands.registerCommand("codemark.highlightCode", () =>
-      highlightCode(context, sidebar)
+      highlightCode(context, sidebar),
+    ),
+
+    vscode.commands.registerCommand("codemark.highlightCodeQuick", () =>
+      highlightCodeQuick(context, sidebar),
     ),
 
     vscode.commands.registerCommand("codemark.removeHighlight", () =>
-      removeHighlightCmd(context, sidebar)
+      removeHighlightCmd(context, sidebar),
     ),
 
     vscode.commands.registerCommand("codemark.editTag", () =>
-      editTagCmd(context, sidebar)
+      editTagCmd(context, sidebar),
     ),
 
     vscode.commands.registerCommand("codemark.changeColor", () =>
-      changeColorCmd(context, sidebar)
+      changeColorCmd(context, sidebar),
     ),
 
     vscode.commands.registerCommand("codemark.showPanel", () => {
@@ -91,16 +107,16 @@ export function activate(context: vscode.ExtensionContext): void {
     }),
 
     vscode.commands.registerCommand("codemark.nextHighlight", () =>
-      nextHighlight(context)
+      nextHighlight(context),
     ),
 
     vscode.commands.registerCommand("codemark.prevHighlight", () =>
-      prevHighlight(context)
+      prevHighlight(context),
     ),
 
     vscode.commands.registerCommand("codemark.clearAllHighlights", () =>
-      clearAllHighlightsCmd(context, sidebar)
-    )
+      clearAllHighlightsCmd(context, sidebar),
+    ),
   );
 
   // ── Editor Event Listeners ────────────────────────────────────────────────
@@ -111,19 +127,19 @@ export function activate(context: vscode.ExtensionContext): void {
       if (editor) {
         applyForEditor(editor, context);
       }
-    })
+    }),
   );
 
   // Reapply when a document is opened
   context.subscriptions.push(
     vscode.workspace.onDidOpenTextDocument((doc) => {
       const editor = vscode.window.visibleTextEditors.find(
-        (e) => e.document === doc
+        (e) => e.document === doc,
       );
       if (editor) {
         applyForEditor(editor, context);
       }
-    })
+    }),
   );
 
   // Debounced reapply on text changes (handles edits above highlights)
@@ -131,28 +147,32 @@ export function activate(context: vscode.ExtensionContext): void {
   context.subscriptions.push(
     vscode.workspace.onDidChangeTextDocument((event) => {
       const editor = vscode.window.visibleTextEditors.find(
-        (e) => e.document === event.document
+        (e) => e.document === event.document,
       );
-      if (!editor) { return; }
+      if (!editor) {
+        return;
+      }
 
-      if (debounceTimer) { clearTimeout(debounceTimer); }
+      if (debounceTimer) {
+        clearTimeout(debounceTimer);
+      }
       debounceTimer = setTimeout(() => {
         applyForEditor(editor, context);
-      }, 400);
-    })
+      }, 500);
+    }),
   );
 
   // Refresh decorations on save (positions may have shifted)
   context.subscriptions.push(
     vscode.workspace.onDidSaveTextDocument((doc) => {
       const editor = vscode.window.visibleTextEditors.find(
-        (e) => e.document === doc
+        (e) => e.document === doc,
       );
       if (editor) {
         applyForEditor(editor, context);
         sidebar.refresh();
       }
-    })
+    }),
   );
 
   // Apply highlights to all currently visible editors on startup
@@ -165,7 +185,7 @@ export function activate(context: vscode.ExtensionContext): void {
 
 function applyForEditor(
   editor: vscode.TextEditor,
-  context: vscode.ExtensionContext
+  context: vscode.ExtensionContext,
 ): void {
   const filePath = getWorkspaceRelativePath(editor.document.uri);
   const highlights = getHighlightsForFile(context, filePath);
