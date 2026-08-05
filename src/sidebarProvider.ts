@@ -364,6 +364,7 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
       const msg = event.data;
       if (msg.type === 'update') {
         allHighlights = msg.highlights || [];
+        console.log('allHighlights: ', allHighlights);
         rebuildTagFilter();
         render();
       }
@@ -419,10 +420,23 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
         return;
       }
 
-      // Sort: by file then by tag
-      const sorted = [...items].sort((a, b) =>
-        a.filePath.localeCompare(b.filePath) || (a.tag || '').localeCompare(b.tag || '')
-      );
+      // Sort: by file then by range
+      const sorted = [...items].sort((a, b) => {
+        // 1. Sort by file path alphabetically
+        const fileComparison = a.filePath.localeCompare(b.filePath);
+        if (fileComparison !== 0) {
+          return fileComparison;
+        }
+
+        // 2. Sort by range (if file paths are identical)
+        // Compare the starting line first
+        if (a.range[0].line !== b.range[0].line) {
+          return a.range[0].line - b.range[0].line;
+        }
+
+        // If they are on the exact same line, compare the starting character
+        return a.range[0].character - b.range[0].character;
+      });
 
       listEl.innerHTML = sorted.map(h => renderCard(h)).join('');
 

@@ -9,6 +9,29 @@ export function hashText(text: string): string {
   return crypto.createHash("sha256").update(text, "utf8").digest("hex");
 }
 
+export function updateHighlightRangesInEditor(
+  editor: vscode.TextEditor,
+  highlights: Highlight[],
+  fuzzyThreshold: number = 0.75,
+): Highlight[] {
+  const updatedHighlights = [];
+  for (const h of highlights) {
+    const range = findRangeInDocument(
+      editor.document,
+      h.codeSnippet,
+      h.codeHash,
+      fuzzyThreshold,
+    );
+    if (!range) {
+      continue;
+    }
+
+    updatedHightlights.push({...h, range: range});
+  }
+
+  return updatedHighlights;
+}
+
 /**
  * Attempt to find the range in `document` where `snippet` lives.
  * Strategy:

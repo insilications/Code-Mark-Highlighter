@@ -8,12 +8,14 @@ import { Highlight, PRESET_COLORS, DEFAULT_TAGS } from "./types";
 import {
   loadHighlights,
   addHighlight,
+  addHighlight2,
   removeHighlight,
   updateHighlight,
   getHighlightsForFile,
   removeHighlightsForFile,
+  saveHighlights,
 } from "./storage";
-import { hashText } from "./highlightMatcher";
+import { hashText, updateHighlightRangesInEditor } from "./highlightMatcher";
 import { applyHighlightsToEditor, findHighlightAtCursor } from "./decorationManager";
 import { SidebarProvider } from "./sidebarProvider";
 
@@ -239,11 +241,15 @@ export async function highlightCodeQuick(
     range: targetRange,
   };
 
-  addHighlight(context, highlight);
+  const fileHighlights = addHighlight2(context, highlight);
+  const fileHighlightsToSave = updateHighlightRangesInEditor(editor, fileHighlights, getFuzzyThreshold());
+  saveHighlights(context, fileHighlightsToSave);
 
-  // Reapply all highlights to this editor
-  const fileHighlights = getHighlightsForFile(context, highlight.filePath);
-  applyHighlightsToEditor(editor, fileHighlights, getFuzzyThreshold());
+  // addHighlight(context, highlight);
+  //
+  // // Reapply all highlights to this editor
+  // const fileHighlights = getHighlightsForFile(context, highlight.filePath);
+  // applyHighlightsToEditor(editor, fileHighlights, getFuzzyThreshold());
 
   sidebar.refresh();
   vscode.window.setStatusBarMessage(`$(bookmark) Code Mark: Highlight added`, 3000);

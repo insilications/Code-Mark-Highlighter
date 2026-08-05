@@ -9,22 +9,42 @@ import { Highlight, HighlightStore, SerializedHighlight } from "./types";
 const STORE_VERSION = 1;
 const WS_STATE_KEY = "codemark.highlights";
 
-function toSerialized(h: Highlight): SerializedHighlight {
+function toSerialized(v: Highlight[], k: string): FilePathsHighlightsSerialized {
   return {
     ...h,
     range: [
-      h.range.start.line,
-      h.range.start.character,
-      h.range.end.line,
-      h.range.end.character,
+      {
+        line: h.range.start.line,
+        character: h.range.start.character,
+      },
+      {
+        line: h.range.end.line,
+        character: h.range.end.character,
+      },
     ],
   };
 }
 
+// function toSerialized(h: Highlight): SerializedHighlight {
+//   return {
+//     ...h,
+//     range: [
+//       {
+//         line: h.range.start.line,
+//         character: h.range.start.character,
+//       },
+//       {
+//         line: h.range.end.line,
+//         character: h.range.end.character,
+//       },
+//     ],
+//   };
+// }
+
 function fromSerialized(s: SerializedHighlight): Highlight {
   return {
     ...s,
-    range: new vscode.Range(s.range[0], s.range[1], s.range[2], s.range[3]),
+    range: new vscode.Range(s.range[0].line, s.range[0].character, s.range[1].line, s.range[1].character),
   };
 }
 
@@ -63,10 +83,14 @@ export function loadHighlights(context: vscode.ExtensionContext): Highlight[] {
 
 export function saveHighlights(
   context: vscode.ExtensionContext,
-  highlights: Highlight[],
+  filePathsHighlights: FilePathsHighlights,
 ): void {
   // Serialize before saving to state to prevent prototype stripping issues
-  const serialized = highlights.map(toSerialized);
+  const serialized = filePathsHighlights.forEach(toSerialized);
+  const serialized: FilePathsHighlightsSerialized = {};
+  for (const [key, value] of myMap) {
+    myRecord[key] = value;
+  }
 
   // Update in-memory state immediately
   context.workspaceState.update(WS_STATE_KEY, serialized);
@@ -95,6 +119,40 @@ export function saveHighlights(
   }
 }
 
+// export function saveHighlights(
+//   context: vscode.ExtensionContext,
+//   highlights: Highlight[],
+// ): void {
+//   // Serialize before saving to state to prevent prototype stripping issues
+//   const serialized = highlights.map(toSerialized);
+//
+//   // Update in-memory state immediately
+//   context.workspaceState.update(WS_STATE_KEY, serialized);
+//
+//   // Write JSON file
+//   const filePath = getStorageFilePath();
+//   if (!filePath) {
+//     return;
+//   }
+//
+//   const dir = path.dirname(filePath);
+//   if (!fs.existsSync(dir)) {
+//     fs.mkdirSync(dir, { recursive: true });
+//   }
+//
+//   const store: HighlightStore = {
+//     version: STORE_VERSION,
+//     highlights: serialized,
+//   };
+//   try {
+//     fs.writeFileSync(filePath, JSON.stringify(store, null, 2), "utf-8");
+//   } catch (err) {
+//     vscode.window.showErrorMessage(
+//       `Code Mark: Failed to save highlights — ${err}`,
+//     );
+//   }
+// }
+
 export function getHighlightsForFile(
   context: vscode.ExtensionContext,
   filePath: string,
@@ -110,6 +168,16 @@ export function addHighlight(
   const all = loadHighlights(context);
   all.push(highlight);
   saveHighlights(context, all);
+}
+
+// Load highlights temporarily and
+export function addHighlight2(
+  context: vscode.ExtensionContext,
+  highlight: Highlight,
+): Highlight[] {
+  const fileHighlights = loadHighlights(context).filter((h) => h.filePath === highlight.filePath);
+  fileHighlights.push(highlight);
+  return fileHighlights;
 }
 
 export function removeHighlight(
