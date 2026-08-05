@@ -4,26 +4,26 @@
 import * as vscode from "vscode";
 import * as fs from "fs";
 import * as path from "path";
-import { Highlight, HighlightStore, SerializedHighlight } from "./types";
+import { Highlight, HighlightStore, HighlightSerialized, FilePathsHighlightsSerialized, FilePathsHighlights } from "./types";
 
 const STORE_VERSION = 1;
 const WS_STATE_KEY = "codemark.highlights";
 
-function toSerialized(v: Highlight[], k: string): FilePathsHighlightsSerialized {
-  return {
-    ...h,
-    range: [
-      {
-        line: h.range.start.line,
-        character: h.range.start.character,
-      },
-      {
-        line: h.range.end.line,
-        character: h.range.end.character,
-      },
-    ],
-  };
-}
+// function toSerialized(v: Highlight[], k: string): FilePathsHighlightsSerialized {
+//   return {
+//     ...h,
+// range: [
+//   {
+//     line: h.range.start.line,
+//     character: h.range.start.character,
+//   },
+//   {
+//     line: h.range.end.line,
+//     character: h.range.end.character,
+//   },
+// ],
+//   };
+// }
 
 // function toSerialized(h: Highlight): SerializedHighlight {
 //   return {
@@ -44,7 +44,12 @@ function toSerialized(v: Highlight[], k: string): FilePathsHighlightsSerialized 
 function fromSerialized(s: SerializedHighlight): Highlight {
   return {
     ...s,
-    range: new vscode.Range(s.range[0].line, s.range[0].character, s.range[1].line, s.range[1].character),
+    range: new vscode.Range(
+      s.range[0].line,
+      s.range[0].character,
+      s.range[1].line,
+      s.range[1].character,
+    ),
   };
 }
 
@@ -86,10 +91,25 @@ export function saveHighlights(
   filePathsHighlights: FilePathsHighlights,
 ): void {
   // Serialize before saving to state to prevent prototype stripping issues
-  const serialized = filePathsHighlights.forEach(toSerialized);
   const serialized: FilePathsHighlightsSerialized = {};
-  for (const [key, value] of myMap) {
-    myRecord[key] = value;
+  for (const [k, v] of filePathsHighlights) {
+    const highlightsSerialized: HighlightSerialized[] = [];
+    for (const h of v) {
+      highlightsSerialized.push({
+        ...h,
+        range: [
+          {
+            line: h.range.start.line,
+            character: h.range.start.character,
+          },
+          {
+            line: h.range.end.line,
+            character: h.range.end.character,
+          },
+        ],
+      });
+    }
+    serialized[k] = highlightsSerialized;
   }
 
   // Update in-memory state immediately
@@ -175,7 +195,9 @@ export function addHighlight2(
   context: vscode.ExtensionContext,
   highlight: Highlight,
 ): Highlight[] {
-  const fileHighlights = loadHighlights(context).filter((h) => h.filePath === highlight.filePath);
+  const fileHighlights = loadHighlights(context).filter(
+    (h) => h.filePath === highlight.filePath,
+  );
   fileHighlights.push(highlight);
   return fileHighlights;
 }
