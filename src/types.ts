@@ -3,6 +3,24 @@
 
 import * as vscode from "vscode";
 
+// export interface HighlightData {
+//   id: string;
+//   codeSnippet: string;
+//   codeSnippetDisplay: string;
+//   codeHash: string;
+//   tag: string;
+//   color: string;
+//   createdAt: string;
+//   updatedAt: string;
+//   range: vscode.Range;
+// }
+
+// export interface Highlight extends HighlightData {
+//   filePath: string;
+// }
+
+// export type HighlightStore = Map<string, HighlightData[]>;
+
 export interface Highlight {
   /** Unique identifier (UUID v4) */
   id: string;
@@ -25,8 +43,9 @@ export interface Highlight {
   range: vscode.Range;
 }
 
-// A map where each key is a file path containing an array of their respective highlights
-export type FilePathsHighlights = Map<string, Highlight[]>;
+// Each key is a file path containing an array of their respective highlights
+export type FilePathsHighlights = Record<string, Highlight[]>;
+// export type FilePathsHighlights = Map<string, Highlight[]>;
 
 export interface PositionSerialized {
   line: number;
@@ -39,15 +58,10 @@ export interface HighlightSerialized extends Omit<Highlight, "range"> {
   range: RangeSerialized;
 }
 
-// The Storage Model (What actually goes to `.vscode/codemark.json` and workspaceState).
 // The serialized version of `FilePathsHighlights`.
-// An object where each property is a file path containing
-// an array of their respective serialized highlights.
-export type FilePathsHighlightsSerialized = Record<
-  string,
-  HighlightSerialized[]
->;
+export type FilePathsHighlightsSerialized = Record<string, HighlightSerialized[]>;
 
+// The Storage Model (What actually goes to `.vscode/codemark.json` and workspaceState).
 export interface HighlightStore {
   version: number;
   highlights: FilePathsHighlightsSerialized;

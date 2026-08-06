@@ -1,0 +1,35 @@
+{
+  "$schema": "./node_modules/oxfmt/configuration_schema.json",
+  "arrowParens": "always",
+  "bracketSpacing": true,
+  "embeddedLanguageFormatting": "auto",
+  "ignorePatterns": [
+    "pnpm-lock.yaml",
+    "package-lock.json",
+    "yarn.lock",
+    "bun.lock",
+    "out/",
+    ".github/"
+  ],
+  "jsdoc": true,
+  "jsxBracketSameLine": false,
+  "objectWrap": "preserve",
+  "printWidth": 100,
+  "proseWrap": "preserve",
+  "semi": true,
+  "singleAttributePerLine": false,
+  "singleQuote": false,
+  "sortImports": { "ignoreCase": true, "newlinesBetween": true, "order": "asc" },
+  "sortPackageJson": { "sortScripts": true },
+  "tabWidth": 2,
+  "trailingComma": "all",
+  "useTabs": false,
+  "overrides": [
+    {
+      "files": ["*.json", "*.jsonc"],
+      "options": {
+        "trailingComma": "none"
+      }
+    }
+  ]
+}

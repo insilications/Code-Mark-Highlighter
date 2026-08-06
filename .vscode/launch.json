@@ -5,13 +5,17 @@
       "name": "Run Extension",
       "type": "extensionHost",
       "request": "launch",
+      "runtimeExecutable": "${execPath}",
       "args": [
-        "--extensionDevelopmentPath=${workspaceFolder}"
+        "--extensionDevelopmentPath=${workspaceFolder}",
+        "/insilications/gstuff/stuff/things/build/dev/UmaTools/UmaTools.code-workspace"
       ],
-      "outFiles": [
-        "${workspaceFolder}/out/**/*.js"
-      ],
-      "preLaunchTask": "${defaultBuildTask}"
+      "outFiles": ["${workspaceFolder}/out/**/*.js"],
+      "resolveSourceMapLocations": ["${workspaceFolder}/out/**", "!**/node_modules/**"],
+      "sourceMaps": true,
+      "smartStep": true,
+      "skipFiles": ["<node_internals>/**", "/usr/share/code-insiders/**"],
+      "preLaunchTask": "npm: compile"
     }
   ]
 }

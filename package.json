@@ -1,34 +1,56 @@
 {
   "name": "code-mark-highlighter",
   "displayName": "Code Mark Highlighter",
-  "description": "Highlight code blocks with custom colors and tags. Highlights persist based on code content — not line numbers — and survive edits and restarts.",
   "version": "0.3.0",
-  "publisher": "KSHYKR",
-  "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/Rumit95/Code-Mark-Highlighter.git"
-  },
-  "engines": {
-    "vscode": "^1.85.0"
-  },
+  "description": "Highlight code blocks with custom colors and tags. Highlights persist based on code content — not line numbers — and survive edits and restarts.",
   "categories": [
     "Other",
     "Programming Languages"
   ],
   "keywords": [
-    "highlight",
     "bookmark",
-    "tags",
     "code",
+    "code mark",
+    "highlight",
     "navigator",
-    "code mark"
+    "tags"
   ],
-  "activationEvents": [
-    "onStartupFinished"
-  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Rumit95/Code-Mark-Highlighter.git"
+  },
+  "publisher": "KSHYKR",
   "main": "./out/extension.js",
-  "icon": "resources/devmarks-icon.png",
+  "scripts": {
+    "check": "tsc --noEmit",
+    "compile": "rolldown -c",
+    "fmt": "oxfmt",
+    "fmt:check": "oxfmt --check",
+    "lint": "oxlint --format=agent",
+    "lint:fix": "oxlint --fix",
+    "lint:full": "oxlint",
+    "lint:sarif": "oxlint --format=sarif",
+    "package": "rolldown -c",
+    "test-compile": "tsc -p ./",
+    "vscode:prepublish": "npm run package",
+    "watch": "rolldown -c -w"
+  },
+  "dependencies": {
+    "litedent": "^0.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.2",
+    "@types/vscode": "^1.125.0",
+    "eslint": "^10.8.0",
+    "eslint-plugin-legibility": "^0.3.0",
+    "eslint-plugin-regexp": "^3.1.1",
+    "oxfmt": "^0.62.0",
+    "oxlint": "^1.77.0",
+    "oxlint-tsgolint": "^7.0.2001",
+    "rolldown": "^1.2.3",
+    "typescript": "^7.1.0-dev.20260807.1"
+  },
   "contributes": {
     "commands": [
       {
@@ -39,21 +61,6 @@
       {
         "command": "codemark.highlightCodeQuick",
         "title": "Code Mark: Quick Highlight Code",
-        "category": "Code Mark"
-      },
-      {
-        "command": "codemark.removeHighlight",
-        "title": "Code Mark: Remove Highlight",
-        "category": "Code Mark"
-      },
-      {
-        "command": "codemark.editTag",
-        "title": "Code Mark: Edit Highlight Tag",
-        "category": "Code Mark"
-      },
-      {
-        "command": "codemark.changeColor",
-        "title": "Code Mark: Change Highlight Color",
         "category": "Code Mark"
       },
       {
@@ -97,32 +104,6 @@
         }
       ]
     },
-    "keybindings": [
-      {
-        "command": "codemark.nextHighlight",
-        "key": "ctrl+alt+n",
-        "mac": "cmd+alt+n",
-        "when": "editorTextFocus"
-      },
-      {
-        "command": "codemark.prevHighlight",
-        "key": "ctrl+alt+p",
-        "mac": "cmd+alt+p",
-        "when": "editorTextFocus"
-      },
-      {
-        "command": "codemark.highlightCode",
-        "key": "ctrl+alt+h",
-        "mac": "cmd+alt+h",
-        "when": "editorHasSelection"
-      },
-      {
-        "command": "codemark.removeHighlight",
-        "key": "ctrl+alt+r",
-        "mac": "cmd+alt+r",
-        "when": "editorTextFocus"
-      }
-    ],
     "configuration": {
       "title": "Code Mark Highlighter",
       "properties": {
@@ -141,20 +122,11 @@
       }
     }
   },
-  "scripts": {
-    "vscode:prepublish": "npm run package",
-    "compile": "rolldown -c",
-    "watch": "rolldown -c -w",
-    "package": "rolldown -c",
-    "test-compile": "tsc -p ./"
-  },
-  "devDependencies": {
-    "@types/node": "^20.0.0",
-    "@types/vscode": "^1.85.0",
-    "rolldown": "^1.2.2",
-    "typescript": "^5.3.3"
-  },
-  "dependencies": {
-    "litedent": "^0.1.0"
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "icon": "resources/devmarks-icon.png",
+  "engines": {
+    "vscode": "^1.85.0"
   }
 }

@@ -1,28 +1,24 @@
 // src/commands.ts
 // Implements all Code Mark commands
 
-import * as vscode from "vscode";
 import * as crypto from "crypto";
-import litedent from 'litedent';
-import { Highlight, PRESET_COLORS, DEFAULT_TAGS } from "./types";
+
+import litedent from "litedent";
+import * as vscode from "vscode";
+
+import { applyHighlightsToEditor, applyHighlightsToEditor2 } from "./decorationManager";
+import { hashText } from "./highlightMatcher";
+import { SidebarProvider } from "./sidebarProvider";
 import {
-  loadHighlights,
   addHighlight,
-  addHighlight2,
-  removeHighlight,
-  updateHighlight,
   getHighlightsForFile,
   removeHighlightsForFile,
-  saveHighlights,
+  saveSortedHighlights,
 } from "./storage";
-import { hashText, updateHighlightRangesInEditor } from "./highlightMatcher";
-import { applyHighlightsToEditor, findHighlightAtCursor } from "./decorationManager";
-import { SidebarProvider } from "./sidebarProvider";
+import { DEFAULT_TAGS, PRESET_COLORS, type Highlight } from "./types";
 
 function getFuzzyThreshold(): number {
-  return vscode.workspace
-    .getConfiguration("codemark")
-    .get<number>("fuzzyMatchThreshold", 0.75);
+  return vscode.workspace.getConfiguration("codemark").get<number>("fuzzyMatchThreshold", 0.75);
 }
 
 function getWorkspaceRelativePath(uri: vscode.Uri): string {
@@ -59,7 +55,9 @@ async function pickColor(currentColor?: string): Promise<string | undefined> {
     title: "Code Mark — Pick Color",
   });
 
-  if (!picked) { return undefined; }
+  if (!picked) {
+    return undefined;
+  }
 
   if (picked.hex === "__custom__") {
     const custom = await vscode.window.showInputBox({
@@ -86,10 +84,12 @@ async function pickTag(currentTag?: string): Promise<string | undefined> {
     {
       placeHolder: "Choose a tag (or press Escape to skip)",
       title: "Code Mark — Set Tag",
-    }
+    },
   );
 
-  if (!result) { return currentTag ?? ""; }
+  if (!result) {
+    return currentTag ?? "";
+  }
   if (result.label === "➕ Custom tag…") {
     const custom = await vscode.window.showInputBox({
       prompt: "Enter a custom tag",
@@ -104,7 +104,7 @@ async function pickTag(currentTag?: string): Promise<string | undefined> {
 
 export async function highlightCode(
   context: vscode.ExtensionContext,
-  sidebar: SidebarProvider
+  sidebar: SidebarProvider,
 ): Promise<void> {
   const editor = vscode.window.activeTextEditor;
   if (!editor) {
@@ -150,7 +150,9 @@ export async function highlightCode(
 
   // Pick color
   const color = await pickColor();
-  if (!color) { return; }
+  if (!color) {
+    return;
+  }
 
   // Pick tag (optional)
   const tag = await pickTag();
@@ -162,7 +164,7 @@ export async function highlightCode(
     codeSnippet: snippet,
     codeSnippetDisplay: litedent(snippet),
     codeHash: hashText(snippet),
-    tag: tag || "",
+    tag: tag ?? "",
     color,
     createdAt: now,
     updatedAt: now,
@@ -176,15 +178,15 @@ export async function highlightCode(
   applyHighlightsToEditor(editor, fileHighlights, getFuzzyThreshold());
 
   sidebar.refresh();
-  vscode.window.setStatusBarMessage(`$(bookmark) Code Mark: Highlight added — [${tag || "No tag"}]`, 3000);
+  vscode.window.setStatusBarMessage(
+    `$(bookmark) Code Mark: Highlight added — [${tag ?? "No tag"}]`,
+    3000,
+  );
 }
 
 // ─── Command: Quick Highlight Code ──────────────────────────────────────────────────
 
-export async function highlightCodeQuick(
-  context: vscode.ExtensionContext,
-  sidebar: SidebarProvider
-): Promise<void> {
+export function highlightCodeQuick(context: vscode.ExtensionContext, sidebar: SidebarProvider): void {
   const editor = vscode.window.activeTextEditor;
   if (!editor) {
     vscode.window.showWarningMessage("Code Mark: No active editor.");
@@ -228,6 +230,8 @@ export async function highlightCodeQuick(
   }
 
   const now = new Date().toISOString();
+  // const targetRangeStart: vscode.Position = targetRange.start;
+  // const targetRangeEnd: vscode.Position = targetRange.end;
   const highlight: Highlight = {
     id: uuidv4(),
     filePath: getWorkspaceRelativePath(editor.document.uri),
@@ -241,133 +245,142 @@ export async function highlightCodeQuick(
     range: targetRange,
   };
 
-  const fileHighlights = addHighlight2(context, highlight);
-  const fileHighlightsToSave = updateHighlightRangesInEditor(editor, fileHighlights, getFuzzyThreshold());
-  saveHighlights(context, fileHighlightsToSave);
+  const fileHighlights: Highlight[] = saveSortedHighlights(context, highlight);
 
-  // addHighlight(context, highlight);
-  //
-  // // Reapply all highlights to this editor
-  // const fileHighlights = getHighlightsForFile(context, highlight.filePath);
-  // applyHighlightsToEditor(editor, fileHighlights, getFuzzyThreshold());
+  // Reapply all highlights to this editor
+  applyHighlightsToEditor2(editor, fileHighlights);
 
   sidebar.refresh();
   vscode.window.setStatusBarMessage(`$(bookmark) Code Mark: Highlight added`, 3000);
 }
 
-// ─── Command: Remove Highlight ────────────────────────────────────────────────
+// // ─── Command: Remove Highlight ────────────────────────────────────────────────
 
-export async function removeHighlightCmd(
-  context: vscode.ExtensionContext,
-  sidebar: SidebarProvider
-): Promise<void> {
-  const editor = vscode.window.activeTextEditor;
-  if (!editor) { return; }
+// export async function removeHighlightCmd(
+//   context: vscode.ExtensionContext,
+//   sidebar: SidebarProvider,
+// ): Promise<void> {
+//   const editor = vscode.window.activeTextEditor;
+//   if (!editor) {
+//     return;
+//   }
 
-  const filePath = getWorkspaceRelativePath(editor.document.uri);
-  const fileHighlights = getHighlightsForFile(context, filePath);
-  const target = findHighlightAtCursor(editor, fileHighlights, getFuzzyThreshold());
+//   const filePath = getWorkspaceRelativePath(editor.document.uri);
+//   const fileHighlights = getHighlightsForFile(context, filePath);
+//   const target = findHighlightAtCursor(editor, fileHighlights, getFuzzyThreshold());
 
-  if (!target) {
-    vscode.window.showInformationMessage("Code Mark: No highlight found at cursor.");
-    return;
-  }
+//   if (!target) {
+//     vscode.window.showInformationMessage("Code Mark: No highlight found at cursor.");
+//     return;
+//   }
 
-  const confirm = await vscode.window.showQuickPick(["Yes, remove it", "Cancel"], {
-    placeHolder: `Remove highlight: "${target.tag || target.codeSnippetDisplay.slice(0, 40)}..."?`,
-    title: "Code Mark — Remove Highlight",
-  });
-  if (confirm !== "Yes, remove it") { return; }
+//   const confirm = await vscode.window.showQuickPick(["Yes, remove it", "Cancel"], {
+//     placeHolder: `Remove highlight: "${target.tag || target.codeSnippetDisplay.slice(0, 40)}..."?`,
+//     title: "Code Mark — Remove Highlight",
+//   });
+//   if (confirm !== "Yes, remove it") {
+//     return;
+//   }
 
-  removeHighlight(context, target.id);
+//   removeHighlight(context, target.id);
 
-  const updated = getHighlightsForFile(context, filePath);
-  applyHighlightsToEditor(editor, updated, getFuzzyThreshold());
+//   const updated = getHighlightsForFile(context, filePath);
+//   applyHighlightsToEditor(editor, updated, getFuzzyThreshold());
 
-  sidebar.refresh();
-  vscode.window.setStatusBarMessage("$(trash) Code Mark: Highlight removed.", 3000);
-}
+//   sidebar.refresh();
+//   vscode.window.setStatusBarMessage("$(trash) Code Mark: Highlight removed.", 3000);
+// }
 
-// ─── Command: Edit Tag ────────────────────────────────────────────────────────
+// // ─── Command: Edit Tag ────────────────────────────────────────────────────────
 
-export async function editTagCmd(
-  context: vscode.ExtensionContext,
-  sidebar: SidebarProvider,
-  highlightId?: string
-): Promise<void> {
-  const editor = vscode.window.activeTextEditor;
-  if (!editor) { return; }
+// export async function editTagCmd(
+//   context: vscode.ExtensionContext,
+//   sidebar: SidebarProvider,
+//   highlightId?: string,
+// ): Promise<void> {
+//   const editor = vscode.window.activeTextEditor;
+//   if (!editor) {
+//     return;
+//   }
 
-  let target: Highlight | undefined;
+//   let target: Highlight | undefined;
 
-  if (highlightId) {
-    target = loadHighlights(context).find((h) => h.id === highlightId);
-  } else {
-    const filePath = getWorkspaceRelativePath(editor.document.uri);
-    const fileHighlights = getHighlightsForFile(context, filePath);
-    target = findHighlightAtCursor(editor, fileHighlights, getFuzzyThreshold());
-  }
+//   if (highlightId) {
+//     target = loadHighlights(context).find((h) => h.id === highlightId);
+//   } else {
+//     const filePath = getWorkspaceRelativePath(editor.document.uri);
+//     const fileHighlights = getHighlightsForFile(context, filePath);
+//     target = findHighlightAtCursor(editor, fileHighlights, getFuzzyThreshold());
+//   }
 
-  if (!target) {
-    vscode.window.showInformationMessage("Code Mark: No highlight found at cursor.");
-    return;
-  }
+//   if (!target) {
+//     vscode.window.showInformationMessage("Code Mark: No highlight found at cursor.");
+//     return;
+//   }
 
-  const newTag = await pickTag(target.tag);
-  if (newTag === undefined) { return; }
+//   const newTag = await pickTag(target.tag);
+//   if (newTag === undefined) {
+//     return;
+//   }
 
-  updateHighlight(context, target.id, { tag: newTag });
+//   updateHighlight(context, target.id, { tag: newTag });
 
-  const filePath = getWorkspaceRelativePath(editor.document.uri);
-  applyHighlightsToEditor(editor, getHighlightsForFile(context, filePath), getFuzzyThreshold());
-  sidebar.refresh();
-  vscode.window.setStatusBarMessage(`$(tag) Code Mark: Tag updated to "${newTag}".`, 3000);
-}
+//   const filePath = getWorkspaceRelativePath(editor.document.uri);
+//   applyHighlightsToEditor(editor, getHighlightsForFile(context, filePath), getFuzzyThreshold());
+//   sidebar.refresh();
+//   vscode.window.setStatusBarMessage(`$(tag) Code Mark: Tag updated to "${newTag}".`, 3000);
+// }
 
-// ─── Command: Change Color ────────────────────────────────────────────────────
+// // ─── Command: Change Color ────────────────────────────────────────────────────
 
-export async function changeColorCmd(
-  context: vscode.ExtensionContext,
-  sidebar: SidebarProvider,
-  highlightId?: string
-): Promise<void> {
-  const editor = vscode.window.activeTextEditor;
-  if (!editor) { return; }
+// export async function changeColorCmd(
+//   context: vscode.ExtensionContext,
+//   sidebar: SidebarProvider,
+//   highlightId?: string,
+// ): Promise<void> {
+//   const editor = vscode.window.activeTextEditor;
+//   if (!editor) {
+//     return;
+//   }
 
-  let target: Highlight | undefined;
+//   let target: Highlight | undefined;
 
-  if (highlightId) {
-    target = loadHighlights(context).find((h) => h.id === highlightId);
-  } else {
-    const filePath = getWorkspaceRelativePath(editor.document.uri);
-    const fileHighlights = getHighlightsForFile(context, filePath);
-    target = findHighlightAtCursor(editor, fileHighlights, getFuzzyThreshold());
-  }
+//   if (highlightId) {
+//     target = loadHighlights(context).find((h) => h.id === highlightId);
+//   } else {
+//     const filePath = getWorkspaceRelativePath(editor.document.uri);
+//     const fileHighlights = getHighlightsForFile(context, filePath);
+//     target = findHighlightAtCursor(editor, fileHighlights, getFuzzyThreshold());
+//   }
 
-  if (!target) {
-    vscode.window.showInformationMessage("Code Mark: No highlight found at cursor.");
-    return;
-  }
+//   if (!target) {
+//     vscode.window.showInformationMessage("Code Mark: No highlight found at cursor.");
+//     return;
+//   }
 
-  const newColor = await pickColor(target.color);
-  if (!newColor) { return; }
+//   const newColor = await pickColor(target.color);
+//   if (!newColor) {
+//     return;
+//   }
 
-  updateHighlight(context, target.id, { color: newColor });
+//   updateHighlight(context, target.id, { color: newColor });
 
-  const filePath = getWorkspaceRelativePath(editor.document.uri);
-  applyHighlightsToEditor(editor, getHighlightsForFile(context, filePath), getFuzzyThreshold());
-  sidebar.refresh();
-  vscode.window.setStatusBarMessage("$(symbol-color) Code Mark: Color updated.", 3000);
-}
+//   const filePath = getWorkspaceRelativePath(editor.document.uri);
+//   applyHighlightsToEditor(editor, getHighlightsForFile(context, filePath), getFuzzyThreshold());
+//   sidebar.refresh();
+//   vscode.window.setStatusBarMessage("$(symbol-color) Code Mark: Color updated.", 3000);
+// }
 
 // ─── Command: Clear All Highlights in File ────────────────────────────────────
 
 export async function clearAllHighlightsCmd(
   context: vscode.ExtensionContext,
-  sidebar: SidebarProvider
+  sidebar: SidebarProvider,
 ): Promise<void> {
   const editor = vscode.window.activeTextEditor;
-  if (!editor) { return; }
+  if (!editor) {
+    return;
+  }
 
   const filePath = getWorkspaceRelativePath(editor.document.uri);
   const fileHighlights = getHighlightsForFile(context, filePath);
@@ -377,14 +390,13 @@ export async function clearAllHighlightsCmd(
     return;
   }
 
-  const confirm = await vscode.window.showQuickPick(
-    ["Yes, clear all", "Cancel"],
-    {
-      placeHolder: `Clear all ${fileHighlights.length} highlight(s) in this file?`,
-      title: "Code Mark — Clear All",
-    }
-  );
-  if (confirm !== "Yes, clear all") { return; }
+  const confirm = await vscode.window.showQuickPick(["Yes, clear all", "Cancel"], {
+    placeHolder: `Clear all ${fileHighlights.length} highlight(s) in this file?`,
+    title: "Code Mark — Clear All",
+  });
+  if (confirm !== "Yes, clear all") {
+    return;
+  }
 
   removeHighlightsForFile(context, filePath);
   applyHighlightsToEditor(editor, [], getFuzzyThreshold());

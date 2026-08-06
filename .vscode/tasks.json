@@ -2,26 +2,19 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "type": "npm",
-      "script": "compile",
+      "type": "shell",
+      "command": "npm run compile",
       "group": {
         "kind": "build",
         "isDefault": true
       },
+      "problemMatcher": [],
+      "label": "npm: compile",
+      "detail": "Runs the compile script via shell execution",
       "presentation": {
-        "reveal": "silent"
-      },
-      "problemMatcher": "$tsc"
-    },
-    {
-      "type": "npm",
-      "script": "watch",
-      "group": "build",
-      "presentation": {
-        "reveal": "silent"
-      },
-      "isBackground": true,
-      "problemMatcher": "$tsc-watch"
+        "reveal": "silent",
+        "panel": "shared"
+      }
     }
   ]
 }

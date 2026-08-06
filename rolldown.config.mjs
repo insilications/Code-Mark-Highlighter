@@ -7,13 +7,14 @@ export default defineConfig({
   output: {
     // The standard VS Code generator uses 'out' or 'dist'
     file: "out/extension.js",
-    format: "cjs", // VS Code extensions currently require CommonJS
+    format: "commonjs", // VS Code extensions currently require CommonJS
     sourcemap: true, // Crucial for breakpoints/debugging in VS Code
+    minify: false, // Set to true for production builds
   },
 
   // Treat Node built-ins (like fs, path) natively rather than bundling them
   platform: "node",
-
+  tsconfig: "./tsconfig.json",
   // DO NOT bundle the 'vscode' module, as the VS Code host provides it at runtime
   external: ["vscode"],
 });

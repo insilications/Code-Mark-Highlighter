@@ -2,26 +2,24 @@
 // Extension entry point — wires everything together.
 
 import * as vscode from "vscode";
-import { SidebarProvider } from "./sidebarProvider";
+
 import {
-  applyHighlightsToEditor,
-  disposeAllDecorations,
-} from "./decorationManager";
-import { getHighlightsForFile, loadHighlights } from "./storage";
-import {
+  // changeColorCmd,
+  clearAllHighlightsCmd,
+  // editTagCmd,
   highlightCode,
   highlightCodeQuick,
-  removeHighlightCmd,
-  editTagCmd,
-  changeColorCmd,
-  clearAllHighlightsCmd,
+  // removeHighlightCmd,
 } from "./commands";
+import { applyHighlightsToEditor, disposeAllDecorations } from "./decorationManager";
 import {
+  jumpToHighlight,
   nextHighlight,
   prevHighlight,
-  jumpToHighlight,
   type IJumpToHighlightArgs,
 } from "./highlightNavigator";
+import { SidebarProvider } from "./sidebarProvider";
+import { getHighlightsForFile } from "./storage";
 
 let sidebar: SidebarProvider;
 
@@ -34,9 +32,7 @@ function getWorkspaceRelativePath(uri: vscode.Uri): string {
 }
 
 function getFuzzyThreshold(): number {
-  return vscode.workspace
-    .getConfiguration("codemark")
-    .get<number>("fuzzyMatchThreshold", 0.75);
+  return vscode.workspace.getConfiguration("codemark").get<number>("fuzzyMatchThreshold", 0.75);
 }
 
 type onActionData = IJumpToHighlightArgs & { id: string };
@@ -59,10 +55,10 @@ export function activate(context: vscode.ExtensionContext): void {
           );
           break;
         case "editTag":
-          await editTagCmd(context, sidebar, d.id);
+          // await editTagCmd(context, sidebar, d.id);
           break;
         case "changeColor":
-          await changeColorCmd(context, sidebar, d.id);
+          // await changeColorCmd(context, sidebar, d.id);
           break;
         case "refresh":
           refreshActiveEditor(context);
@@ -72,47 +68,35 @@ export function activate(context: vscode.ExtensionContext): void {
   );
 
   context.subscriptions.push(
-    vscode.window.registerWebviewViewProvider(
-      SidebarProvider.VIEW_ID,
-      sidebar,
-      { webviewOptions: { retainContextWhenHidden: true } },
-    ),
+    vscode.window.registerWebviewViewProvider(SidebarProvider.VIEW_ID, sidebar, {
+      webviewOptions: { retainContextWhenHidden: true },
+    }),
   );
 
   // ── Commands ──────────────────────────────────────────────────────────────
   context.subscriptions.push(
-    vscode.commands.registerCommand("codemark.highlightCode", () =>
-      highlightCode(context, sidebar),
-    ),
+    vscode.commands.registerCommand("codemark.highlightCode", () => highlightCode(context, sidebar)),
 
     vscode.commands.registerCommand("codemark.highlightCodeQuick", () =>
       highlightCodeQuick(context, sidebar),
     ),
 
-    vscode.commands.registerCommand("codemark.removeHighlight", () =>
-      removeHighlightCmd(context, sidebar),
-    ),
+    // vscode.commands.registerCommand("codemark.removeHighlight", () =>
+    //   removeHighlightCmd(context, sidebar),
+    // ),
 
-    vscode.commands.registerCommand("codemark.editTag", () =>
-      editTagCmd(context, sidebar),
-    ),
+    // vscode.commands.registerCommand("codemark.editTag", () => editTagCmd(context, sidebar)),
 
-    vscode.commands.registerCommand("codemark.changeColor", () =>
-      changeColorCmd(context, sidebar),
-    ),
+    // vscode.commands.registerCommand("codemark.changeColor", () => changeColorCmd(context, sidebar)),
 
     vscode.commands.registerCommand("codemark.showPanel", () => {
       sidebar.reveal();
       vscode.commands.executeCommand("codemark.highlightsPanel.focus");
     }),
 
-    vscode.commands.registerCommand("codemark.nextHighlight", () =>
-      nextHighlight(context),
-    ),
+    vscode.commands.registerCommand("codemark.nextHighlight", () => nextHighlight(context)),
 
-    vscode.commands.registerCommand("codemark.prevHighlight", () =>
-      prevHighlight(context),
-    ),
+    vscode.commands.registerCommand("codemark.prevHighlight", () => prevHighlight(context)),
 
     vscode.commands.registerCommand("codemark.clearAllHighlights", () =>
       clearAllHighlightsCmd(context, sidebar),
@@ -133,9 +117,7 @@ export function activate(context: vscode.ExtensionContext): void {
   // Reapply when a document is opened
   context.subscriptions.push(
     vscode.workspace.onDidOpenTextDocument((doc) => {
-      const editor = vscode.window.visibleTextEditors.find(
-        (e) => e.document === doc,
-      );
+      const editor = vscode.window.visibleTextEditors.find((e) => e.document === doc);
       if (editor) {
         applyForEditor(editor, context);
       }
@@ -146,9 +128,7 @@ export function activate(context: vscode.ExtensionContext): void {
   let debounceTimer: NodeJS.Timeout | undefined;
   context.subscriptions.push(
     vscode.workspace.onDidChangeTextDocument((event) => {
-      const editor = vscode.window.visibleTextEditors.find(
-        (e) => e.document === event.document,
-      );
+      const editor = vscode.window.visibleTextEditors.find((e) => e.document === event.document);
       if (!editor) {
         return;
       }
@@ -165,9 +145,7 @@ export function activate(context: vscode.ExtensionContext): void {
   // Refresh decorations on save (positions may have shifted)
   context.subscriptions.push(
     vscode.workspace.onDidSaveTextDocument((doc) => {
-      const editor = vscode.window.visibleTextEditors.find(
-        (e) => e.document === doc,
-      );
+      const editor = vscode.window.visibleTextEditors.find((e) => e.document === doc);
       if (editor) {
         applyForEditor(editor, context);
         sidebar.refresh();
@@ -183,10 +161,7 @@ export function activate(context: vscode.ExtensionContext): void {
   console.log("Code Mark Highlighter extension activated ✓");
 }
 
-function applyForEditor(
-  editor: vscode.TextEditor,
-  context: vscode.ExtensionContext,
-): void {
+function applyForEditor(editor: vscode.TextEditor, context: vscode.ExtensionContext): void {
   const filePath = getWorkspaceRelativePath(editor.document.uri);
   const highlights = getHighlightsForFile(context, filePath);
   applyHighlightsToEditor(editor, highlights, getFuzzyThreshold());
