@@ -1,164 +1,192 @@
-// src/extension.ts
-// Extension entry point — wires everything together.
-
 import * as vscode from "vscode";
+import { Messenger } from "vscode-messenger";
 
-import {
-  // changeColorCmd,
-  clearAllHighlightsCmd,
-  // editTagCmd,
-  highlightCode,
-  highlightCodeQuick,
-  // removeHighlightCmd,
-} from "./commands";
+import { highlightCodeQuick } from "./commands";
+import { ACTIVATED_CONTEXT } from "./constants";
 import { applyHighlightsToEditor, disposeAllDecorations } from "./decorationManager";
+import { jumpToHighlight } from "./highlightNavigator";
+import { HighlightRepository } from "./highlightRepository";
+import { getHighlightsForFile, loadHighlights } from "./storage";
+import type { HighlightStore } from "./types";
+import { getFuzzyThreshold } from "./utils";
 import {
-  jumpToHighlight,
-  nextHighlight,
-  prevHighlight,
-  type IJumpToHighlightArgs,
-} from "./highlightNavigator";
-import { SidebarProvider } from "./sidebarProvider";
-import { getHighlightsForFile } from "./storage";
+  jumpToHighlightNotificationType,
+  refreshNotificationType,
+  SidebarProvider,
+} from "./webView/sidebarProvider";
+import type { IJumpToHighlightParams, onActionData } from "./webView/types";
 
 let sidebar: SidebarProvider;
+let highlightRepository: HighlightRepository;
+const messenger = new Messenger();
 
 function getWorkspaceRelativePath(uri: vscode.Uri): string {
   const folders = vscode.workspace.workspaceFolders;
   if (folders && folders.length > 0) {
     return vscode.workspace.asRelativePath(uri, false);
   }
+
   return uri.fsPath;
 }
 
-function getFuzzyThreshold(): number {
-  return vscode.workspace.getConfiguration("codemark").get<number>("fuzzyMatchThreshold", 0.75);
-}
+export async function activate(context: vscode.ExtensionContext): Promise<void> {
+  try {
+    const highlightStore: HighlightStore = loadHighlights(context);
 
-type onActionData = IJumpToHighlightArgs & { id: string };
+    highlightRepository = HighlightRepository.fromStore(highlightStore);
 
-export function activate(context: vscode.ExtensionContext): void {
-  // ── Sidebar Provider ──────────────────────────────────────────────────────
-  sidebar = new SidebarProvider(
-    context.extensionUri,
-    context,
-    async (action: string, data: unknown) => {
-      const d = data as onActionData;
-      switch (action) {
-        case "jumpTo":
-          await jumpToHighlight(
-            d.filePath,
-            d.snippet,
-            d.codeHash,
-            getFuzzyThreshold(),
-            d.jumpInSplitEditor,
+    // Sidebar Provider
+    sidebar = new SidebarProvider(
+      context,
+      highlightRepository,
+      // async (action: string, data: unknown): Promise<void> => {
+      async (data: onActionData): Promise<void> => {
+        switch (data.id) {
+          case "jumpTo":
+            await jumpToHighlight(
+              data.filePath,
+              data.snippet,
+              data.codeHash,
+              getFuzzyThreshold(),
+              data.jumpInSplitEditor,
+            );
+            break;
+          // case "editTag":
+          //   // await editTagCmd(context, sidebar, d.id);
+          //   break;
+          // case "changeColor":
+          //   // await changeColorCmd(context, sidebar, d.id);
+          //   break;
+          case "refresh":
+            refreshActiveEditor(context);
+            break;
+        }
+      },
+    );
+
+    // =====================================================================
+    // WebView Messaging Listeners
+    // =====================================================================
+    const webView: vscode.WebviewView | undefined = sidebar.webview;
+    if (!webView) {
+      throw new Error("Sidebar webview is not initialized.");
+    }
+    // Register the WebView with the messenger for communication
+    messenger.registerWebviewView(webView);
+    messenger.onNotification(
+      jumpToHighlightNotificationType,
+      async (data: IJumpToHighlightParams): Promise<void> => {
+        await jumpToHighlight(
+          data.filePath,
+          data.snippet,
+          data.codeHash,
+          getFuzzyThreshold(),
+          data.jumpInSplitEditor,
+        );
+      },
+    );
+    messenger.onNotification(refreshNotificationType, (): void => {
+      refreshActiveEditor(context);
+    });
+
+    // Debounce timer for reapplying highlights during `vscode.workspace.onDidChangeTextDocument`
+    let debounceTimer: NodeJS.Timeout | undefined;
+
+    context.subscriptions.push(
+      vscode.window.registerWebviewViewProvider(SidebarProvider.VIEW_ID, sidebar, {
+        webviewOptions: { retainContextWhenHidden: true },
+      }),
+
+      // =====================================================================
+      // Commands
+      // =====================================================================
+
+      // vscode.commands.registerCommand("codemark.highlightCode", () =>
+      //   highlightCode(context, sidebar),
+      // ),
+      vscode.commands.registerCommand("codemark.highlightCodeQuick", () => {
+        highlightCodeQuick(context, sidebar);
+      }),
+      // vscode.commands.registerCommand("codemark.removeHighlight", () =>
+      //   removeHighlightCmd(context, sidebar),
+      // ),
+      // vscode.commands.registerCommand("codemark.editTag", () => editTagCmd(context, sidebar)),
+      // vscode.commands.registerCommand("codemark.changeColor", () => changeColorCmd(context, sidebar)),
+      vscode.commands.registerCommand("codemark.showPanel", () => {
+        sidebar.reveal();
+        vscode.commands.executeCommand("codemark.highlightsPanel.focus");
+      }),
+      // vscode.commands.registerCommand("codemark.nextHighlight", () => nextHighlight(context)),
+      // vscode.commands.registerCommand("codemark.prevHighlight", () => prevHighlight(context)),
+      // vscode.commands.registerCommand("codemark.clearAllHighlights", () =>
+      //   clearAllHighlightsCmd(context, sidebar),
+      // ),
+
+      // =====================================================================
+      // Editor event listeners
+      // =====================================================================
+
+      // Reapply when a document is opened
+      vscode.workspace.onDidOpenTextDocument((doc) => {
+        const editor = vscode.window.visibleTextEditors.find((e) => e.document === doc);
+        if (editor) {
+          applyForEditor(editor, context);
+        }
+      }),
+
+      // Debounced reapplying highlights on text changes (handles edits above highlights)
+      vscode.workspace.onDidChangeTextDocument(
+        (event: Readonly<vscode.TextDocumentChangeEvent>) => {
+          const editor = vscode.window.visibleTextEditors.find(
+            (e) => e.document === event.document,
           );
-          break;
-        case "editTag":
-          // await editTagCmd(context, sidebar, d.id);
-          break;
-        case "changeColor":
-          // await changeColorCmd(context, sidebar, d.id);
-          break;
-        case "refresh":
-          refreshActiveEditor(context);
-          break;
-      }
-    },
-  );
+          if (!editor) {
+            return;
+          }
 
-  context.subscriptions.push(
-    vscode.window.registerWebviewViewProvider(SidebarProvider.VIEW_ID, sidebar, {
-      webviewOptions: { retainContextWhenHidden: true },
-    }),
-  );
+          if (debounceTimer) {
+            clearTimeout(debounceTimer);
+          }
+          debounceTimer = setTimeout(() => {
+            applyForEditor(editor, context);
+          }, 500);
+        },
+      ),
 
-  // ── Commands ──────────────────────────────────────────────────────────────
-  context.subscriptions.push(
-    vscode.commands.registerCommand("codemark.highlightCode", () => highlightCode(context, sidebar)),
+      // Refresh decorations on save (positions may have shifted)
+      vscode.workspace.onDidSaveTextDocument((doc) => {
+        const editor = vscode.window.visibleTextEditors.find((e) => e.document === doc);
+        if (editor) {
+          applyForEditor(editor, context);
+          sidebar.refresh();
+        }
+      }),
 
-    vscode.commands.registerCommand("codemark.highlightCodeQuick", () =>
-      highlightCodeQuick(context, sidebar),
-    ),
+      // Reapply when switching editors
+      vscode.window.onDidChangeActiveTextEditor((editor) => {
+        if (editor) {
+          applyForEditor(editor, context);
+        }
+      }),
+    );
 
-    // vscode.commands.registerCommand("codemark.removeHighlight", () =>
-    //   removeHighlightCmd(context, sidebar),
-    // ),
+    // Apply highlights to all currently visible editors on startup
+    for (const editor of vscode.window.visibleTextEditors) {
+      applyForEditor(editor, context);
+    }
 
-    // vscode.commands.registerCommand("codemark.editTag", () => editTagCmd(context, sidebar)),
+    // Success: Enable the UI elements
+    await vscode.commands.executeCommand("setContext", ACTIVATED_CONTEXT, true);
+    console.log("Code Mark Highlighter extension activated ✓");
+  } catch (error) {
+    vscode.commands.executeCommand("setContext", ACTIVATED_CONTEXT, false);
 
-    // vscode.commands.registerCommand("codemark.changeColor", () => changeColorCmd(context, sidebar)),
-
-    vscode.commands.registerCommand("codemark.showPanel", () => {
-      sidebar.reveal();
-      vscode.commands.executeCommand("codemark.highlightsPanel.focus");
-    }),
-
-    vscode.commands.registerCommand("codemark.nextHighlight", () => nextHighlight(context)),
-
-    vscode.commands.registerCommand("codemark.prevHighlight", () => prevHighlight(context)),
-
-    vscode.commands.registerCommand("codemark.clearAllHighlights", () =>
-      clearAllHighlightsCmd(context, sidebar),
-    ),
-  );
-
-  // ── Editor Event Listeners ────────────────────────────────────────────────
-
-  // Reapply when switching editors
-  context.subscriptions.push(
-    vscode.window.onDidChangeActiveTextEditor((editor) => {
-      if (editor) {
-        applyForEditor(editor, context);
-      }
-    }),
-  );
-
-  // Reapply when a document is opened
-  context.subscriptions.push(
-    vscode.workspace.onDidOpenTextDocument((doc) => {
-      const editor = vscode.window.visibleTextEditors.find((e) => e.document === doc);
-      if (editor) {
-        applyForEditor(editor, context);
-      }
-    }),
-  );
-
-  // Debounced reapply on text changes (handles edits above highlights)
-  let debounceTimer: NodeJS.Timeout | undefined;
-  context.subscriptions.push(
-    vscode.workspace.onDidChangeTextDocument((event) => {
-      const editor = vscode.window.visibleTextEditors.find((e) => e.document === event.document);
-      if (!editor) {
-        return;
-      }
-
-      if (debounceTimer) {
-        clearTimeout(debounceTimer);
-      }
-      debounceTimer = setTimeout(() => {
-        applyForEditor(editor, context);
-      }, 500);
-    }),
-  );
-
-  // Refresh decorations on save (positions may have shifted)
-  context.subscriptions.push(
-    vscode.workspace.onDidSaveTextDocument((doc) => {
-      const editor = vscode.window.visibleTextEditors.find((e) => e.document === doc);
-      if (editor) {
-        applyForEditor(editor, context);
-        sidebar.refresh();
-      }
-    }),
-  );
-
-  // Apply highlights to all currently visible editors on startup
-  for (const editor of vscode.window.visibleTextEditors) {
-    applyForEditor(editor, context);
+    console.error("[Code Mark Highlighter] Failed to start extension. ", error);
+    vscode.window.showErrorMessage(
+      `[Code Mark Highlighter] Failed to start. ${error instanceof Error ? error.message : String(error)}`,
+    );
+    throw new Error("[Code Mark Highlighter] Failed to start.", { cause: error });
   }
-
-  console.log("Code Mark Highlighter extension activated ✓");
 }
 
 function applyForEditor(editor: vscode.TextEditor, context: vscode.ExtensionContext): void {

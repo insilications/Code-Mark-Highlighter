@@ -11,7 +11,10 @@
     "out/",
     ".github/"
   ],
-  "jsdoc": true,
+  "jsdoc": {
+    "preferCodeFences": true,
+    "separateReturnsFromParam": true
+  },
   "jsxBracketSameLine": false,
   "objectWrap": "preserve",
   "printWidth": 100,

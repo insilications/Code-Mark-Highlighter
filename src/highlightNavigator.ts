@@ -2,9 +2,11 @@
 // Jump to next/previous highlight in the current file
 
 import * as vscode from "vscode";
-import { Highlight } from "./types";
+
 import { findRangeInDocument } from "./highlightMatcher";
 import { getHighlightsForFile } from "./storage";
+import { Highlight } from "./types";
+import { getFuzzyThreshold } from "./utils";
 
 interface ResolvedHighlight {
   highlight: Highlight;
@@ -26,12 +28,7 @@ function resolveHighlightsInEditor(
 ): ResolvedHighlight[] {
   const resolved: ResolvedHighlight[] = [];
   for (const h of highlights) {
-    const range = findRangeInDocument(
-      editor.document,
-      h.codeSnippet,
-      h.codeHash,
-      fuzzyThreshold,
-    );
+    const range = findRangeInDocument(editor.document, h.codeSnippet, h.codeHash, fuzzyThreshold);
     if (range) {
       resolved.push({ highlight: h, range });
     }
@@ -39,20 +36,11 @@ function resolveHighlightsInEditor(
   // Sort by start position
   return resolved.sort(
     (a, b) =>
-      a.range.start.line - b.range.start.line ||
-      a.range.start.character - b.range.start.character,
+      a.range.start.line - b.range.start.line || a.range.start.character - b.range.start.character,
   );
 }
 
-function getFuzzyThreshold(): number {
-  return vscode.workspace
-    .getConfiguration("codemark")
-    .get<number>("fuzzyMatchThreshold", 0.75);
-}
-
-export async function nextHighlight(
-  context: vscode.ExtensionContext,
-): Promise<void> {
+export function nextHighlight(context: vscode.ExtensionContext): void {
   const editor = vscode.window.activeTextEditor;
   if (!editor) {
     return;
@@ -62,18 +50,11 @@ export async function nextHighlight(
   const fileHighlights = getHighlightsForFile(context, filePath);
 
   if (fileHighlights.length === 0) {
-    vscode.window.setStatusBarMessage(
-      "$(bookmark) Code Mark: No highlights in this file.",
-      2500,
-    );
+    vscode.window.setStatusBarMessage("$(bookmark) Code Mark: No highlights in this file.", 2500);
     return;
   }
 
-  const resolved = resolveHighlightsInEditor(
-    editor,
-    fileHighlights,
-    getFuzzyThreshold(),
-  );
+  const resolved = resolveHighlightsInEditor(editor, fileHighlights, getFuzzyThreshold());
   if (resolved.length === 0) {
     return;
   }
@@ -91,15 +72,10 @@ export async function nextHighlight(
   revealHighlight(editor, target);
 
   const tag = target.highlight.tag || "No tag";
-  vscode.window.setStatusBarMessage(
-    `$(arrow-down) Code Mark: → [${tag}]`,
-    2500,
-  );
+  vscode.window.setStatusBarMessage(`$(arrow-down) Code Mark: → [${tag}]`, 2500);
 }
 
-export async function prevHighlight(
-  context: vscode.ExtensionContext,
-): Promise<void> {
+export async function prevHighlight(context: vscode.ExtensionContext): Promise<void> {
   const editor = vscode.window.activeTextEditor;
   if (!editor) {
     return;
@@ -109,18 +85,11 @@ export async function prevHighlight(
   const fileHighlights = getHighlightsForFile(context, filePath);
 
   if (fileHighlights.length === 0) {
-    vscode.window.setStatusBarMessage(
-      "$(bookmark) Code Mark: No highlights in this file.",
-      2500,
-    );
+    vscode.window.setStatusBarMessage("$(bookmark) Code Mark: No highlights in this file.", 2500);
     return;
   }
 
-  const resolved = resolveHighlightsInEditor(
-    editor,
-    fileHighlights,
-    getFuzzyThreshold(),
-  );
+  const resolved = resolveHighlightsInEditor(editor, fileHighlights, getFuzzyThreshold());
   if (resolved.length === 0) {
     return;
   }
@@ -130,9 +99,7 @@ export async function prevHighlight(
   // Find last highlight before cursor (in reverse)
   const beforeCursor = resolved.filter((r) => r.range.end.isBefore(cursor));
   let target =
-    beforeCursor.length > 0
-      ? beforeCursor[beforeCursor.length - 1]
-      : resolved[resolved.length - 1]; // wrap to end
+    beforeCursor.length > 0 ? beforeCursor[beforeCursor.length - 1] : resolved[resolved.length - 1]; // wrap to end
 
   revealHighlight(editor, target);
 
@@ -158,9 +125,7 @@ export async function jumpToHighlight(
 
   // Determine which column to open the document in based on the parameter
   const showOptions: vscode.TextDocumentShowOptions = {
-    viewColumn: jumpInSplitEditor
-      ? vscode.ViewColumn.Beside
-      : vscode.ViewColumn.Active,
+    viewColumn: jumpInSplitEditor ? vscode.ViewColumn.Beside : vscode.ViewColumn.Active,
   };
 
   const editor = await vscode.window.showTextDocument(doc, showOptions);
@@ -175,31 +140,10 @@ export async function jumpToHighlight(
 
   // Select and reveal the range
   editor.selection = new vscode.Selection(range.start, range.end);
-  editor.revealRange(
-    range,
-    vscode.TextEditorRevealType.InCenterIfOutsideViewport,
-  );
+  editor.revealRange(range, vscode.TextEditorRevealType.InCenterIfOutsideViewport);
 }
 
-type JumpParamsTuple = Parameters<typeof jumpToHighlight>;
-export interface IJumpToHighlightArgs {
-  filePath: JumpParamsTuple[0];
-  snippet: JumpParamsTuple[1];
-  codeHash: JumpParamsTuple[2];
-  fuzzyThreshold: JumpParamsTuple[3];
-  jumpInSplitEditor: JumpParamsTuple[4];
-}
-
-function revealHighlight(
-  editor: vscode.TextEditor,
-  resolved: ResolvedHighlight,
-): void {
-  editor.selection = new vscode.Selection(
-    resolved.range.start,
-    resolved.range.end,
-  );
-  editor.revealRange(
-    resolved.range,
-    vscode.TextEditorRevealType.InCenterIfOutsideViewport,
-  );
+function revealHighlight(editor: vscode.TextEditor, resolved: ResolvedHighlight): void {
+  editor.selection = new vscode.Selection(resolved.range.start, resolved.range.end);
+  editor.revealRange(resolved.range, vscode.TextEditorRevealType.InCenterIfOutsideViewport);
 }

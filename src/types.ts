@@ -1,70 +1,153 @@
-// src/types.ts
-// Shared type definitions for Code Mark Highlighter extension
-
 import * as vscode from "vscode";
 
-// export interface HighlightData {
-//   id: string;
-//   codeSnippet: string;
-//   codeSnippetDisplay: string;
-//   codeHash: string;
-//   tag: string;
-//   color: string;
-//   createdAt: string;
-//   updatedAt: string;
-//   range: vscode.Range;
-// }
-
-// export interface Highlight extends HighlightData {
-//   filePath: string;
-// }
-
-// export type HighlightStore = Map<string, HighlightData[]>;
-
+/**
+ * Runtime representation of one bookmark/highlight.
+ *
+ * Notice that filePath deliberately does not live here. The containing FileHighlights Map already
+ * establishes which file owns the highlight.
+ *
+ * Keeping filePath out of every Highlight:
+ *
+ * - Avoids having two sources of truth;
+ * - Avoids repeating the same filepath for every highlight in a file;
+ * - Makes moving an entire file's highlights cheaper and less error-prone.
+ */
 export interface Highlight {
-  /** Unique identifier (UUID v4) */
+  /** Unique identifier (UUID v4). */
   id: string;
-  /** Workspace-relative file path */
-  filePath: string;
-  /** The exact text that was highlighted */
+
+  /** The exact text that was highlighted. */
   codeSnippet: string;
-  /** The text that was highlighted, escaped and dedented for displaying */
+
+  /**
+   * A representation of codeSnippet suitable for display in the UI.
+   *
+   * This can be escaped/dedented independently of the exact source text kept in codeSnippet.
+   */
   codeSnippetDisplay: string;
-  /** SHA-256 hash of codeSnippet for fast exact matching */
+
+  /**
+   * SHA-256 hash of codeSnippet.
+   *
+   * This is intended as a fast rejection/indexing mechanism. If semantic correctness requires
+   * proving that two snippets are identical, compare codeSnippet as well after the hashes match.
+   */
   codeHash: string;
-  /** User-assigned tag e.g. "TODO", "Bug", "Important" */
+
+  /** User-assigned tag, e.g. "TODO", "Bug", "Important". */
   tag: string;
-  /** Hex color string e.g. "#FFD700" */
+
+  /** Hex color string, e.g. "#FFD700". */
   color: string;
-  /** ISO 8601 timestamp */
+
+  /** ISO 8601 timestamp. */
   createdAt: string;
-  /** ISO 8601 timestamp */
+
+  /** ISO 8601 timestamp. */
   updatedAt: string;
+
+  /**
+   * Current source location of the highlight.
+   *
+   * This may change after edits or fuzzy relocation.
+   */
   range: vscode.Range;
 }
 
-// Each key is a file path containing an array of their respective highlights
-export type FilePathsHighlights = Record<string, Highlight[]>;
-// export type FilePathsHighlights = Map<string, Highlight[]>;
+/**
+ * Runtime index.
+ *
+ * Key: Canonical file identifier/path used by the extension.
+ *
+ * Value: All highlights belonging to that file, always sorted by source range.
+ *
+ * The HighlightRepository below owns the invariants around this Map. Avoid mutating the Map or its
+ * arrays from arbitrary locations in the extension.
+ */
+export type FileHighlights = Map<string, Highlight[]>;
 
+/**
+ * JSON-compatible representation of vscode.Position.
+ *
+ * Vscode.Position is a class, so the persistence layer deliberately converts it to plain data
+ * rather than depending on implementation details of class serialization.
+ */
 export interface PositionSerialized {
   line: number;
   character: number;
 }
 
+/**
+ * Compact representation of a range:
+ *
+ * [start, end]
+ *
+ * A tuple is sufficient because the meaning and ordering of both positions is fixed.
+ */
 export type RangeSerialized = [PositionSerialized, PositionSerialized];
 
+/**
+ * Persistence representation of Highlight.
+ *
+ * All regular Highlight properties are already JSON-compatible except vscode.Range, which is
+ * replaced with RangeSerialized.
+ */
 export interface HighlightSerialized extends Omit<Highlight, "range"> {
   range: RangeSerialized;
 }
 
-// The serialized version of `FilePathsHighlights`.
-export type FilePathsHighlightsSerialized = Record<string, HighlightSerialized[]>;
+/**
+ * JSON-compatible representation of FileHighlights.
+ *
+ * Map is preferable at runtime, while Record is preferable at the persistence boundary because JSON
+ * has no native Map representation.
+ */
+export type FileHighlightsSerialized = Record<string, HighlightSerialized[]>;
 
-// The Storage Model (What actually goes to `.vscode/codemark.json` and workspaceState).
+/**
+ * Root persistence model written to `.vscode/codemark.json` and/or workspaceState.
+ *
+ * Version exists specifically so future releases can migrate older data instead of having to infer
+ * its schema.
+ */
 export interface HighlightStore {
   version: number;
-  highlights: FilePathsHighlightsSerialized;
+  fileHighlights: FileHighlightsSerialized;
+}
+
+/**
+ * A deliberately smaller representation for the webview.
+ *
+ * The webview does not automatically need every internal property of a Highlight. In particular,
+ * transmitting codeSnippet and codeHash on every refresh would be wasted serialization and IPC work
+ * if the UI never uses them.
+ *
+ * Add fields here only when the webview actually needs them.
+ */
+export interface HighlightViewModel {
+  id: string;
+  codeSnippetDisplay: string;
+  tag: string;
+  color: string;
+
+  /**
+   * Useful if the webview displays source location information.
+   *
+   * Lines/characters remain zero-based here. Convert to one-based values only at the presentation
+   * point if the UI displays human-facing line numbers.
+   */
+  range: RangeSerialized;
+}
+
+/**
+ * One file as seen by the webview.
+ *
+ * Instances of this interface are emitted in filepath-sorted order. Highlights are already
+ * source-range-sorted because that is an invariant of the runtime repository.
+ */
+export interface FileHighlightsViewModel {
+  filePath: string;
+  highlights: HighlightViewModel[];
 }
 
 export interface ColorOption {
@@ -72,27 +155,3 @@ export interface ColorOption {
   emoji: string;
   hex: string;
 }
-
-export const PRESET_COLORS: ColorOption[] = [
-  { label: "Golden Yellow", emoji: "🟡", hex: "#FFD700" },
-  { label: "Lime Green", emoji: "🟢", hex: "#50FA7B" },
-  { label: "Hot Pink", emoji: "🩷", hex: "#FF6EB4" },
-  { label: "Sky Blue", emoji: "🔵", hex: "#87CEEB" },
-  { label: "Coral Red", emoji: "🔴", hex: "#FF6B6B" },
-  { label: "Lavender", emoji: "🟣", hex: "#C9B8E8" },
-  { label: "Orange", emoji: "🟠", hex: "#FF9F43" },
-  { label: "Cyan", emoji: "🩵", hex: "#62D6E8" },
-];
-
-export const DEFAULT_TAGS = [
-  "TODO",
-  "Important",
-  "Refactor",
-  "Bug",
-  "Logic",
-  "Interview",
-  "Optimization",
-  "Review",
-  "Question",
-  "Note",
-];

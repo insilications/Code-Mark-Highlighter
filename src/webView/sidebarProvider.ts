@@ -1,50 +1,84 @@
 // src/sidebarProvider.ts
 // Sidebar webview panel — shows all highlights with filter, navigation and CRUD actions.
 
-import * as vscode from "vscode";
+import * as fs from "fs";
 
-import { loadHighlights, removeHighlight } from "./storage";
+import * as vscode from "vscode";
+import { NotificationType } from "vscode-messenger-common";
+
+import type { HighlightRepository } from "../highlightRepository";
+import { removeHighlight } from "../storage";
+import type { FileHighlightsViewModel } from "../types";
+import type { IJumpToHighlightParams, onActionData } from "../webView/types";
+
+// =====================================================================
+// WebView message types — declare once, import on both sides
+// =====================================================================
+export const jumpToHighlightNotificationType: NotificationType<IJumpToHighlightParams> = {
+  method: "jumpToHighlight",
+};
+export const refreshNotificationType: NotificationType<void> = {
+  method: "refresh",
+};
 
 export class SidebarProvider implements vscode.WebviewViewProvider {
   public static readonly VIEW_ID = "codemark.highlightsPanel";
-  private _view?: vscode.WebviewView;
+  private readonly extensionUri: vscode.Uri;
+  private view?: vscode.WebviewView;
+  private mainWebViewScriptUri: vscode.Uri;
+  private mainWebViewHtmlUri: vscode.Uri;
 
   constructor(
-    private readonly _extensionUri: vscode.Uri,
-    private readonly _context: vscode.ExtensionContext,
-    private readonly _onAction: (action: string, data: unknown) => void,
-  ) {}
+    private readonly context: vscode.ExtensionContext,
+    private readonly highlightRepository: HighlightRepository,
+    private readonly onAction: (data: onActionData) => Promise<void>,
+  ) {
+    this.extensionUri = context.extensionUri;
+    this.mainWebViewScriptUri = vscode.Uri.joinPath(this.extensionUri, "out", "mainWebView.js");
+    this.mainWebViewHtmlUri = vscode.Uri.joinPath(
+      this.extensionUri,
+      "src",
+      "webView",
+      "mainWebView.html",
+    );
+  }
 
   resolveWebviewView(
     webviewView: vscode.WebviewView,
-    _ctx: vscode.WebviewViewResolveContext,
+    _context: vscode.WebviewViewResolveContext,
     _token: vscode.CancellationToken,
   ): void {
-    this._view = webviewView;
+    this.view = webviewView;
 
     webviewView.webview.options = {
       enableScripts: true,
-      localResourceRoots: [this._extensionUri],
+      localResourceRoots: [this.extensionUri],
     };
 
-    webviewView.webview.html = this._buildHtml();
-    this._setMessageListener(webviewView.webview);
+    webviewView.webview.html = this.buildHtmlForWebView(webviewView.webview);
+    this.setMessageListener(webviewView.webview);
     this.refresh();
   }
 
   public refresh(): void {
-    if (!this._view) {
+    if (!this.view) {
       return;
     }
-    const highlights = loadHighlights(this._context);
-    this._view.webview.postMessage({ type: "update", highlights });
+    // const highlights = loadHighlights(this._context);
+    const fileHighlightsViewModel: FileHighlightsViewModel[] =
+      this.highlightRepository.createWebviewModel();
+    this.view.webview.postMessage({ type: "update", fileHighlightsViewModel });
+  }
+
+  public get webview(): vscode.WebviewView | undefined {
+    return this.view;
   }
 
   public reveal(): void {
-    this._view?.show?.(true);
+    this.view?.show(true);
   }
 
-  private _setMessageListener(webview: vscode.Webview): void {
+  private setMessageListener(webview: vscode.Webview): void {
     webview.onDidReceiveMessage(
       async (msg: {
         command: string;
@@ -56,7 +90,8 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
       }) => {
         switch (msg.command) {
           case "jumpTo":
-            this._onAction("jumpTo", {
+            await this.onAction({
+              id: "jumpTo",
               filePath: msg.filePath,
               snippet: msg.snippet,
               codeHash: msg.hash,
@@ -65,16 +100,16 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
             break;
           case "delete":
             if (msg.id) {
-              removeHighlight(this._context, msg.id);
+              removeHighlight(this.context, msg.id);
               this.refresh();
-              this._onAction("refresh", {});
+              await this.onAction({ id: "refresh" });
             }
             break;
           case "editTag":
-            this._onAction("editTag", { id: msg.id });
+            await this.onAction({ id: "editTag", highlightId: msg.id, newTag: "" });
             break;
           case "changeColor":
-            this._onAction("changeColor", { id: msg.id });
+            await this.onAction({ id: "changeColor", highlightId: msg.id, newColor: "" });
             break;
           case "ready":
             this.refresh();
@@ -82,13 +117,15 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
         }
       },
       undefined,
-      this._context.subscriptions,
+      this.context.subscriptions,
     );
   }
 
-  private _buildHtml(): string {
-    const nonce = getNonce();
-    return /* html */ `<!DOCTYPE html>
+  private buildHtmlForWebView(webview: vscode.Webview): string {
+    const scriptUri: vscode.Uri = webview.asWebviewUri(this.mainWebViewScriptUri);
+    const htmlContent: string = fs.readFileSync(this.mainWebViewHtmlUri.fsPath, "utf-8");
+    const nonce: string = getNonce();
+    return `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -347,7 +384,7 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
 
   <script nonce="${nonce}">
     const vscode = acquireVsCodeApi();
-    let allHighlights = [];
+    let fileHighlightsViewModel = [];
     let searchQuery = '';
     let filterTag = '';
 
@@ -363,8 +400,8 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
     window.addEventListener('message', (event) => {
       const msg = event.data;
       if (msg.type === 'update') {
-        allHighlights = msg.highlights ?? {};
-        console.log('allHighlights: ', allHighlights);
+        fileHighlightsViewModel = msg.fileHighlightsViewModel ?? {};
+        console.log('fileHighlightsViewModel: ', fileHighlightsViewModel);
         rebuildTagFilter();
         render();
       }
@@ -543,8 +580,7 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
 </html>`;
   }
 }
-
-function getNonce(): string {
+function getNonce() {
   let text = "";
   const possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
   for (let i = 0; i < 32; i++) {

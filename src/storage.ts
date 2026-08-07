@@ -6,15 +6,9 @@ import * as path from "path";
 
 import * as vscode from "vscode";
 
-import type {
-  FilePathsHighlights,
-  FilePathsHighlightsSerialized,
-  Highlight,
-  HighlightSerialized,
-  HighlightStore,
-} from "./types";
+import { HIGHLIGHT_STORE_VERSION } from "./constants";
+import type { Highlight, HighlightSerialized, HighlightStore } from "./types";
 
-const STORE_VERSION = 1;
 const WS_STATE_KEY = "codemark.highlights";
 
 // function fromSerialized(s: HighlightSerialized): Highlight {
@@ -29,101 +23,126 @@ const WS_STATE_KEY = "codemark.highlights";
 //   };
 // }
 
-export function serializeFilePathsHighlights(
-  filePathsHighlights: FilePathsHighlights,
-): FilePathsHighlightsSerialized {
-  const result = Object.create(null) as FilePathsHighlightsSerialized;
+// export function serializeFilePathsHighlights(
+//   filePathsHighlights: FilePathsHighlights,
+// ): Record<string, HighlightSerialized[]> {
+//   const result = Object.create(null) as Record<string, HighlightSerialized[]>;
 
-  for (const filePath of Object.keys(filePathsHighlights)) {
-    const highlights: Highlight[] = filePathsHighlights[filePath] ?? [];
-    const serializedHighlights = new Array<HighlightSerialized>(highlights.length);
+//   for (const filePath of Object.keys(filePathsHighlights)) {
+//     const highlights: Highlight[] = filePathsHighlights[filePath] ?? [];
+//     const serializedHighlights = new Array<HighlightSerialized>(highlights.length);
 
-    const highlightsLen = highlights.length;
-    for (let i = 0; i < highlightsLen; i++) {
-      const highlight: Highlight = highlights[i]!;
-      const { start, end } = highlight.range;
+//     const highlightsLen = highlights.length;
+//     for (let i = 0; i < highlightsLen; i++) {
+//       const highlight: Highlight = highlights[i]!;
+//       const { start, end } = highlight.range;
 
-      serializedHighlights[i] = {
-        ...highlight,
-        range: [
-          {
-            line: start.line,
-            character: start.character,
-          },
-          {
-            line: end.line,
-            character: end.character,
-          },
-        ],
-      };
-    }
+//       serializedHighlights[i] = {
+//         ...highlight,
+//         range: [
+//           {
+//             line: start.line,
+//             character: start.character,
+//           },
+//           {
+//             line: end.line,
+//             character: end.character,
+//           },
+//         ],
+//       };
+//     }
 
-    result[filePath] = serializedHighlights;
-  }
+//     result[filePath] = serializedHighlights;
+//   }
 
-  return result;
-}
+//   return result;
+// }
 
-export function deserializeFilePathsHighlights(
-  serialized: FilePathsHighlightsSerialized,
-): FilePathsHighlights {
-  const result = Object.create(null) as FilePathsHighlights;
+// export function deserializeFilePathsHighlights(
+//   serialized: Record<string, HighlightSerialized[]>,
+// ): FilePathsHighlights {
+//   const result = Object.create(null) as FilePathsHighlights;
 
-  for (const filePath of Object.keys(serialized)) {
-    const serializedHighlights: HighlightSerialized[] = serialized[filePath]!;
-    const highlights = new Array<Highlight>(serializedHighlights.length);
+//   for (const filePath of Object.keys(serialized)) {
+//     const serializedHighlights: HighlightSerialized[] = serialized[filePath]!;
+//     const highlights = new Array<Highlight>(serializedHighlights.length);
 
-    for (let i = 0; i < serializedHighlights.length; i++) {
-      const serializedHighlight: HighlightSerialized = serializedHighlights[i]!;
-      const [start, end] = serializedHighlight.range;
+//     for (let i = 0; i < serializedHighlights.length; i++) {
+//       const serializedHighlight: HighlightSerialized = serializedHighlights[i]!;
+//       const [start, end] = serializedHighlight.range;
 
-      highlights[i] = {
-        ...serializedHighlight,
-        range: new vscode.Range(start.line, start.character, end.line, end.character),
-      };
-    }
+//       highlights[i] = {
+//         ...serializedHighlight,
+//         range: new vscode.Range(start.line, start.character, end.line, end.character),
+//       };
+//     }
 
-    result[filePath] = highlights;
-  }
+//     result[filePath] = highlights;
+//   }
 
-  return result;
-}
+//   return result;
+// }
+
+// export function getWorkspaceRelativePath(uri: vscode.Uri): string | null {
+//   const workspaceFolders: readonly vscode.WorkspaceFolder[] | undefined =
+//     vscode.workspace.workspaceFolders;
+
+//   const workspaceRoot: string | undefined =
+//     workspaceFolders && workspaceFolders.length > 0 ? workspaceFolders[0]?.uri.fsPath : undefined;
+
+//   if (workspaceRoot !== undefined) {
+//     const rel = vscode.workspace.asRelativePath(uri, false);
+//     return rel;
+//   }
+
+//   return uri.fsPath;
+
+//   // const folders = vscode.workspace.workspaceFolders;
+//   // if (folders && folders.length > 0) {
+//   // const rel = vscode.workspace.asRelativePath(uri, false);
+//   // return rel;
+//   // }
+//   // return uri.fsPath;
+// }
 
 function getStorageFilePath(): string | null {
-  const folders = vscode.workspace.workspaceFolders;
-  if (!folders || folders.length === 0) {
+  const workspaceFolders: readonly vscode.WorkspaceFolder[] | undefined =
+    vscode.workspace.workspaceFolders;
+  const workspaceRoot: string | undefined =
+    workspaceFolders && workspaceFolders.length > 0 ? workspaceFolders[0]?.uri.fsPath : undefined;
+
+  if (workspaceRoot === undefined) {
     return null;
   }
-  const cfg = vscode.workspace.getConfiguration("codemark");
-  const rel = cfg.get<string>("storageFile", ".vscode/codemark.json");
-  return path.join(folders[0].uri.fsPath, rel);
+
+  const cfg: vscode.WorkspaceConfiguration = vscode.workspace.getConfiguration("codemark");
+  const storageFileRelative: string = cfg.get<string>("storageFile", ".vscode/codemark.json");
+  return path.join(workspaceRoot, storageFileRelative);
 }
 
-export function loadHighlights(context: vscode.ExtensionContext): FilePathsHighlights {
+export function loadHighlights(context: vscode.ExtensionContext): HighlightStore {
   const filePath: string | null = getStorageFilePath();
-  if (filePath && fs.existsSync(filePath)) {
+  if (filePath !== null && fs.existsSync(filePath)) {
     try {
-      const raw: string = fs.readFileSync(filePath, "utf-8");
-      const store: HighlightStore = JSON.parse(raw);
-      // context.workspaceState.update(WS_STATE_KEY, store.highlights);
-      return deserializeFilePathsHighlights(store.highlights);
+      // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+      return JSON.parse(fs.readFileSync(filePath, "utf-8")) as HighlightStore;
     } catch {
       // Fall through to workspace state
     }
   }
-
+  return { version: HIGHLIGHT_STORE_VERSION, fileHighlights: {} };
   // Fallback: workspaceState
-  const state: FilePathsHighlightsSerialized = {};
+  // const state: Record<string, HighlightSerialized[]> = {};
   // const state: FilePathsHighlightsSerialized =
   //   context.workspaceState.get<FilePathsHighlightsSerialized>(WS_STATE_KEY) ?? {};
-  return deserializeFilePathsHighlights(state);
+  // return deserializeFilePathsHighlights(state);
 }
 
 export function saveHighlights(
   context: vscode.ExtensionContext,
   filePathsHighlights: FilePathsHighlights,
 ): void {
-  const filePathsHighlightsSerialized: FilePathsHighlightsSerialized =
+  const filePathsHighlightsSerialized: Record<string, HighlightSerialized[]> =
     serializeFilePathsHighlights(filePathsHighlights);
 
   // Update in-memory state immediately
@@ -141,7 +160,7 @@ export function saveHighlights(
   }
 
   const store: HighlightStore = {
-    version: STORE_VERSION,
+    version: HIGHLIGHT_STORE_VERSION,
     highlights: filePathsHighlightsSerialized,
   };
   try {

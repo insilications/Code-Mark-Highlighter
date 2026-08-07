@@ -37,51 +37,38 @@
     "watch": "rolldown -c -w"
   },
   "dependencies": {
-    "litedent": "^0.1.0"
+    "@vscode-elements/elements": "file:../elements",
+    "@vscode/codicons": "^0.0.46-24",
+    "litedent": "^0.1.0",
+    "vscode-messenger": "^0.6.1",
+    "vscode-messenger-common": "^0.6.1",
+    "vscode-messenger-webview": "^0.6.1"
   },
   "devDependencies": {
-    "@types/node": "^26.1.2",
+    "@types/node": "^26.2.0",
     "@types/vscode": "^1.125.0",
-    "eslint": "^10.8.0",
+    "eslint": "^10.8.1",
     "eslint-plugin-legibility": "^0.3.0",
     "eslint-plugin-regexp": "^3.1.1",
     "oxfmt": "^0.62.0",
-    "oxlint": "^1.77.0",
+    "oxlint": "^1.76.0",
     "oxlint-tsgolint": "^7.0.2001",
     "rolldown": "^1.2.3",
-    "typescript": "^7.1.0-dev.20260807.1"
+    "typescript": "^7.1.0-dev.20260808.1"
   },
   "contributes": {
     "commands": [
       {
-        "command": "codemark.highlightCode",
-        "title": "Code Mark: Highlight Code",
-        "category": "Code Mark"
-      },
-      {
         "command": "codemark.highlightCodeQuick",
         "title": "Code Mark: Quick Highlight Code",
-        "category": "Code Mark"
+        "category": "Code Mark",
+        "when": "codemark:isActivated"
       },
       {
         "command": "codemark.showPanel",
         "title": "Code Mark: Show Highlights Panel",
-        "category": "Code Mark"
-      },
-      {
-        "command": "codemark.nextHighlight",
-        "title": "Code Mark: Next Highlight",
-        "category": "Code Mark"
-      },
-      {
-        "command": "codemark.prevHighlight",
-        "title": "Code Mark: Previous Highlight",
-        "category": "Code Mark"
-      },
-      {
-        "command": "codemark.clearAllHighlights",
-        "title": "Code Mark: Clear All Highlights in File",
-        "category": "Code Mark"
+        "category": "Code Mark",
+        "when": "codemark:isActivated"
       }
     ],
     "viewsContainers": {
@@ -100,7 +87,8 @@
           "id": "codemark.highlightsPanel",
           "name": "Highlights",
           "icon": "resources/devmarks.svg",
-          "contextualTitle": "Code Mark Highlights"
+          "contextualTitle": "Code Mark Highlights",
+          "when": "codemark:isActivated"
         }
       ]
     },
@@ -117,7 +105,7 @@
           "default": 0.75,
           "minimum": 0.5,
           "maximum": 1,
-          "description": "Minimum similarity ratio (0.5–1.0) for fuzzy content matching when re-applying highlights."
+          "description": "Minimum similarity ratio (0.5 - 1.0) for fuzzy content matching when re-applying highlights."
         }
       }
     }
