@@ -7,14 +7,14 @@ export default defineConfig([
     output: {
       dir: "out",
       // Required for VS Code Engine
-      format: "commonjs",
+      format: "esm",
       sourcemap: true,
-      minify: true,
+      minify: false,
     },
     // Treats node built-ins natively
-    platform: "node",
+    platform: "browser",
     // Keeps vscode external
-    external: ["vscode"],
+    external: ["vscode", "node:fs", "node:path", "node:crypto"],
     tsconfig: "./tsconfig.json",
   },
 
@@ -26,7 +26,7 @@ export default defineConfig([
       // Modern browsers natively support ES Modules
       format: "esm",
       sourcemap: true,
-      minify: true,
+      minify: false,
     },
     // Informs Rolldown this code runs in a browser environment
     platform: "browser",

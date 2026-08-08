@@ -2,7 +2,7 @@
 // Content-based matching: finds where a stored highlight lives in the current document
 // Uses exact hash match first, then fuzzy substring search as fallback.
 
-import * as crypto from "crypto";
+import * as crypto from "node:crypto";
 
 import * as vscode from "vscode";
 

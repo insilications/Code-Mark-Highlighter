@@ -21,6 +21,7 @@
     "url": "https://github.com/Rumit95/Code-Mark-Highlighter.git"
   },
   "publisher": "KSHYKR",
+  "type": "module",
   "main": "./out/extension.js",
   "scripts": {
     "check": "tsc --noEmit",
@@ -59,55 +60,55 @@
   "contributes": {
     "commands": [
       {
+        "category": "Code Mark",
         "command": "codemark.highlightCodeQuick",
         "title": "Code Mark: Quick Highlight Code",
-        "category": "Code Mark",
         "when": "codemark:isActivated"
       },
       {
+        "category": "Code Mark",
         "command": "codemark.showPanel",
         "title": "Code Mark: Show Highlights Panel",
-        "category": "Code Mark",
         "when": "codemark:isActivated"
       }
     ],
-    "viewsContainers": {
-      "activitybar": [
-        {
-          "id": "codemark-sidebar",
-          "title": "Code Mark Highlighter",
-          "icon": "resources/devmarks.svg"
+    "configuration": {
+      "properties": {
+        "codemark.fuzzyMatchThreshold": {
+          "default": 0.75,
+          "description": "Minimum similarity ratio (0.5 - 1.0) for fuzzy content matching when re-applying highlights.",
+          "maximum": 1,
+          "minimum": 0.5,
+          "type": "number"
+        },
+        "codemark.storageFile": {
+          "default": ".vscode/codemark.json",
+          "description": "Path (relative to workspace root) where highlights are stored.",
+          "type": "string"
         }
-      ]
+      },
+      "title": "Code Mark Highlighter"
     },
     "views": {
       "codemark-sidebar": [
         {
-          "type": "webview",
+          "contextualTitle": "Code Mark Highlights",
+          "icon": "resources/devmarks.svg",
           "id": "codemark.highlightsPanel",
           "name": "Highlights",
-          "icon": "resources/devmarks.svg",
-          "contextualTitle": "Code Mark Highlights",
+          "type": "webview",
           "when": "codemark:isActivated"
         }
       ]
     },
-    "configuration": {
-      "title": "Code Mark Highlighter",
-      "properties": {
-        "codemark.storageFile": {
-          "type": "string",
-          "default": ".vscode/codemark.json",
-          "description": "Path (relative to workspace root) where highlights are stored."
-        },
-        "codemark.fuzzyMatchThreshold": {
-          "type": "number",
-          "default": 0.75,
-          "minimum": 0.5,
-          "maximum": 1,
-          "description": "Minimum similarity ratio (0.5 - 1.0) for fuzzy content matching when re-applying highlights."
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "icon": "resources/devmarks.svg",
+          "id": "codemark-sidebar",
+          "title": "Code Mark Highlighter"
         }
-      }
+      ]
     }
   },
   "activationEvents": [
@@ -115,6 +116,6 @@
   ],
   "icon": "resources/devmarks-icon.png",
   "engines": {
-    "vscode": "^1.85.0"
+    "vscode": "^1.100.0"
   }
 }

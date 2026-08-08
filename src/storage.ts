@@ -1,8 +1,8 @@
 // src/storage.ts
 // Handles reading/writing highlights to .vscode/codemark.json and workspaceState
 
-import * as fs from "fs";
-import * as path from "path";
+import * as fs from "node:fs";
+import * as path from "node:path";
 
 import * as vscode from "vscode";
 
