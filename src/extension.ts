@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { Messenger } from "vscode-messenger";
+import { Messenger, type MessengerDiagnostic } from "vscode-messenger";
 
 import { highlightCodeQuick } from "./commands";
 import { ACTIVATED_CONTEXT } from "./constants";
@@ -13,7 +13,7 @@ let sidebar: SidebarProvider;
 let highlightRepository: HighlightRepository;
 const messenger = new Messenger();
 
-export async function activate(context: vscode.ExtensionContext): Promise<void> {
+export async function activate(context: vscode.ExtensionContext): Promise<MessengerDiagnostic> {
   try {
     const highlightStore: HighlightStore = loadHighlights(context);
 
@@ -66,7 +66,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       //   highlightCode(context, sidebar),
       // ),
       vscode.commands.registerCommand("codemark.highlightCodeQuick", () => {
-        highlightCodeQuick(context, sidebar);
+        highlightCodeQuick(sidebar);
       }),
       // vscode.commands.registerCommand("codemark.removeHighlight", () =>
       //   removeHighlightCmd(context, sidebar),
@@ -113,7 +113,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         },
       ),
 
-      // Refresh decorations on save (positions may have shifted)
+      // Reapply decorations and refresh the `SidebarProvider` on save (positions may have shifted)
       vscode.workspace.onDidSaveTextDocument((doc) => {
         const editor = vscode.window.visibleTextEditors.find((e) => e.document === doc);
         if (editor) {
@@ -138,14 +138,15 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     // Success: Enable the UI elements
     await vscode.commands.executeCommand("setContext", ACTIVATED_CONTEXT, true);
     console.log("Code Mark Highlighter extension activated ✓");
-  } catch (error) {
+    return messenger.diagnosticApi({ withParameterData: true, withResponseData: true });
+  } catch (err) {
     vscode.commands.executeCommand("setContext", ACTIVATED_CONTEXT, false);
 
-    console.error("[Code Mark Highlighter] Failed to start extension. ", error);
+    console.error("[Code Mark Highlighter] Failed to start extension. ", err);
     vscode.window.showErrorMessage(
-      `[Code Mark Highlighter] Failed to start. ${error instanceof Error ? error.message : String(error)}`,
+      `[Code Mark Highlighter] Failed to start. ${err instanceof Error ? err.message : String(err)}`,
     );
-    throw new Error("[Code Mark Highlighter] Failed to start.", { cause: error });
+    throw new Error("[Code Mark Highlighter] Failed to start.", { cause: err });
   }
 }
 

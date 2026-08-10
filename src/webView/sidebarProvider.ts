@@ -5,13 +5,13 @@ import * as fs from "node:fs";
 
 import * as vscode from "vscode";
 import { type Messenger } from "vscode-messenger";
-import { NotificationType } from "vscode-messenger-common";
+import { NotificationType, type WebviewIdMessageParticipant } from "vscode-messenger-common";
 
-import { applyHighlightsToEditor } from "../decorationManager";
+import { applyHighlightsToEditor2 } from "../decorationManager";
 import { jumpToHighlight } from "../highlightNavigator";
 import type { HighlightRepository } from "../highlightRepository";
-import { getHighlightsForFile, getWorkspaceRelativePath } from "../storage";
-import type { FileHighlightsViewModel, Highlight } from "../types";
+import { getWorkspaceRelativePath } from "../storage";
+import type { FileHighlightsViewModel } from "../types";
 import { getFuzzyThreshold } from "../utils";
 import type { IJumpToHighlightParams } from "../webView/types";
 
@@ -35,13 +35,14 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
   public static readonly VIEW_ID = "codemark.highlightsPanel";
   private readonly extensionUri: vscode.Uri;
   private view?: vscode.WebviewView;
+  private webviewIdMessageParticipant?: WebviewIdMessageParticipant;
   // private mainWebViewScriptUri: vscode.Uri;
   private mainWebViewHtmlUri: vscode.Uri;
 
   constructor(
     private readonly extensionContext: vscode.ExtensionContext,
     private readonly messenger: Messenger,
-    private readonly highlightRepository: HighlightRepository,
+    public readonly highlightRepository: HighlightRepository,
   ) {
     this.extensionUri = extensionContext.extensionUri;
     // this.mainWebViewScriptUri = vscode.Uri.joinPath(this.extensionUri, "out", "mainWebView.js");
@@ -65,10 +66,10 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
       localResourceRoots: [this.extensionUri],
     };
 
-    webviewView.webview.html = this.buildHtmlForWebView(webviewView.webview);
+    webviewView.webview.html = this.buildHtmlForWebView();
 
     // Register the WebView with the messenger for communication
-    this.messenger.registerWebviewView(webviewView);
+    this.webviewIdMessageParticipant = this.messenger.registerWebviewView(webviewView);
 
     // =====================================================================
     // WebView Messaging Listeners
@@ -79,7 +80,7 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
         async (data: IJumpToHighlightParams): Promise<void> => {
           await jumpToHighlight(
             data.filePath,
-            data.snippet,
+            data.codeSnippet,
             data.codeHash,
             getFuzzyThreshold(),
             data.jumpInSplitEditor,
@@ -99,12 +100,12 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
       }
     });
 
-    // this.refresh();
+    // this.refreshSidebar();
   }
 
   public refreshSidebar(): void {
     // Is this necessary? The webview should be ready when this is called, but just in case.
-    if (!this.view) {
+    if (!this.view || !this.webviewIdMessageParticipant) {
       return;
     }
 
@@ -112,7 +113,7 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
       this.highlightRepository.createWebviewModel();
     this.messenger.sendNotification(
       updateWebViewNotificationType,
-      { type: "webview", webviewType: SidebarProvider.VIEW_ID },
+      this.webviewIdMessageParticipant,
       fileHighlightsViewModel,
     );
   }
@@ -126,18 +127,18 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
     extensionContext: vscode.ExtensionContext,
   ): void {
     const filePath: string = getWorkspaceRelativePath(editor.document.uri);
-    const highlights: Highlight[] = getHighlightsForFile(extensionContext, filePath);
-    applyHighlightsToEditor(editor, highlights, getFuzzyThreshold());
+    // oxlint-disable-next-line typescript/no-non-null-assertion
+    applyHighlightsToEditor2(editor, this.highlightRepository.getHighlights(filePath)!);
   }
 
   public refreshActiveEditor(extensionContext: vscode.ExtensionContext): void {
-    const editor = vscode.window.activeTextEditor;
+    const editor: vscode.TextEditor | undefined = vscode.window.activeTextEditor;
     if (editor) {
       this.applyForEditor(editor, extensionContext);
     }
   }
 
-  private buildHtmlForWebView(webview: vscode.Webview): string {
+  private buildHtmlForWebView(): string {
     const htmlContent: string = fs.readFileSync(this.mainWebViewHtmlUri.fsPath, "utf-8");
     return htmlContent.replaceAll("NNNN", getNonce());
   }

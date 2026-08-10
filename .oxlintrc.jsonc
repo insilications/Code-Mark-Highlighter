@@ -50,7 +50,7 @@
     "eslint/no-inner-declarations": "warn",
     "eslint/no-lonely-if": "warn",
     "eslint/no-loop-func": "warn",
-    "eslint/no-negated-condition": "warn",
+    "eslint/no-negated-condition": "off",
     "eslint/no-new-wrappers": "warn",
     "eslint/no-object-constructor": "warn",
     "eslint/no-promise-executor-return": "warn",
@@ -75,7 +75,7 @@
         "maxDepth": 3
       }
     ],
-    "jsdoc/require-param": "warn",
+    "jsdoc/require-param": "off",
     "jsdoc/require-param-description": "warn",
     "jsdoc/require-param-name": "warn",
     "jsdoc/require-param-type": "warn",
@@ -96,7 +96,7 @@
         "max": 2
       }
     ],
-    "legibility/max-control-flow-depth": "warn",
+    "legibility/max-control-flow-depth": ["warn", { "max": 4 }],
     "legibility/max-expression-operators": [
       "warn",
       {
@@ -110,7 +110,7 @@
         "max": 3
       }
     ],
-    "legibility/no-computed-values": "warn",
+    "legibility/no-computed-values": ["warn", { "max": 3 }],
     "legibility/no-direct-node-bin-smoke": "warn",
     "legibility/no-hidden-side-effects": "warn",
     "legibility/no-identity-array-callback": "warn",
@@ -388,7 +388,7 @@
     "unicorn/no-immediate-mutation": "warn",
     "unicorn/no-instanceof-array": "warn",
     "unicorn/no-lonely-if": "warn",
-    "unicorn/no-negated-condition": "warn",
+    "unicorn/no-negated-condition": "off",
     "unicorn/no-negation-in-equality-check": "warn",
     "unicorn/no-new-array": "off",
     "unicorn/no-new-buffer": "warn",

@@ -7,6 +7,7 @@ import {
   sortHighlightsByRange,
 } from "./highlightUtils";
 import { deserializeHighlightStore, serializeHighlightStore } from "./serialization";
+import { saveHighlights } from "./storage";
 import type { FileHighlights, FileHighlightsViewModel, Highlight, HighlightStore } from "./types";
 import { compareFilePathsForDisplay, createHighlightViewModels } from "./webviewProjection";
 
@@ -116,6 +117,7 @@ export class HighlightRepository {
 
     this.invalidateSortedFilePaths();
 
+    saveHighlights(this.fileHighlights);
     return 0;
   }
 
@@ -380,11 +382,13 @@ export class HighlightRepository {
        * This non-null assertion follows directly from the cache invariant: cached filepaths are
        * derived from the Map keys and the cache is invalidated whenever a key disappears.
        */
+
       // oxlint-disable-next-line typescript/no-non-null-assertion
       const highlights: Highlight[] = this.fileHighlights.get(filePath)!;
 
       result[i] = {
         filePath,
+        filePathSearch: filePath.toLowerCase(),
         highlights: createHighlightViewModels(highlights),
       };
     }

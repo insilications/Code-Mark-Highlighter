@@ -1,14 +1,14 @@
 // src/commands.ts
 // Implements all Code Mark commands
 
+import crypto from "node:crypto";
+
 import { litedent } from "litedent";
 import * as vscode from "vscode";
 
 import { applyHighlightsToEditor2 } from "./decorationManager";
 import { hashText } from "./highlightMatcher";
-import { uuidv4 } from "./highlightUtils";
-import { saveSortedHighlights } from "./storage";
-import { type Highlight } from "./types";
+import type { HighlightRepository } from "./highlightRepository";
 import { SidebarProvider } from "./webView/sidebarProvider";
 
 // function getFuzzyThreshold(): number {
@@ -168,24 +168,19 @@ import { SidebarProvider } from "./webView/sidebarProvider";
 // }
 
 /** Command: Quick Highlight Code */
-export function highlightCodeQuick(
-  context: vscode.ExtensionContext,
-  sidebar: SidebarProvider,
-): void {
-  const editor = vscode.window.activeTextEditor;
+export function highlightCodeQuick(sidebar: SidebarProvider): void {
+  const editor: vscode.TextEditor | undefined = vscode.window.activeTextEditor;
   if (!editor) {
     vscode.window.showWarningMessage("Code Mark: No active editor.");
     return;
   }
 
   const selection: vscode.Selection = editor.selection;
-  let snippet: string = "";
   let targetRange: vscode.Range;
 
   if (!selection.isEmpty) {
     // Standard behavior: use the user's explicit selection
     targetRange = new vscode.Range(selection.start, selection.end);
-    snippet = editor.document.getText(targetRange);
   } else {
     // Fallback behavior: grab current line + up to 3 next lines
     const startLine: number = selection.active.line;
@@ -205,35 +200,33 @@ export function highlightCodeQuick(
     const endPos = new vscode.Position(endLine, endLineLength);
 
     targetRange = new vscode.Range(startPos, endPos);
-    snippet = editor.document.getText(targetRange);
   }
 
+  const codeSnippet: string = editor.document.getText(targetRange);
+
   // If the extracted snippet is entirely whitespace (e.g., user clicked on a block of empty lines)
-  if (!snippet.trim()) {
+  if (!codeSnippet.trim()) {
     vscode.window.showWarningMessage("Code Mark: Selection and surrounding lines are empty.");
     return;
   }
 
-  const now = new Date().toISOString();
-  // const targetRangeStart: vscode.Position = targetRange.start;
-  // const targetRangeEnd: vscode.Position = targetRange.end;
-  const highlight: Highlight = {
-    id: uuidv4(),
-    filePath: vscode.workspace.asRelativePath(editor.document.uri),
-    codeSnippet: snippet,
-    codeSnippetDisplay: litedent(snippet),
-    codeHash: hashText(snippet),
+  const now: string = new Date().toISOString();
+  const filePath: string = vscode.workspace.asRelativePath(editor.document.uri);
+  const highlightRepository: HighlightRepository = sidebar.highlightRepository;
+  highlightRepository.addHighlight(filePath, {
+    id: crypto.randomUUID(),
+    codeSnippet,
+    codeSnippetDisplay: litedent(codeSnippet),
+    codeHash: hashText(codeSnippet),
     tag: "",
     color: "#f7db00",
     createdAt: now,
     updatedAt: now,
     range: targetRange,
-  };
+  });
 
-  const fileHighlights: Highlight[] = saveSortedHighlights(context, highlight);
-
-  // Reapply all highlights to this editor
-  applyHighlightsToEditor2(editor, fileHighlights);
+  // oxlint-disable-next-line typescript/no-non-null-assertion
+  applyHighlightsToEditor2(editor, highlightRepository.getHighlights(filePath)!);
 
   sidebar.refreshSidebar();
   vscode.window.setStatusBarMessage(`$(bookmark) Code Mark: Highlight added`, 3000);

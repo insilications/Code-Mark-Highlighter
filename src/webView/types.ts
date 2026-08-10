@@ -4,7 +4,7 @@ type JumpParamsTuple = Parameters<typeof jumpToHighlight>;
 
 export interface IJumpToHighlightParams {
   filePath: JumpParamsTuple[0];
-  snippet: JumpParamsTuple[1];
+  codeSnippet: JumpParamsTuple[1];
   codeHash: JumpParamsTuple[2];
   fuzzyThreshold: JumpParamsTuple[3];
   jumpInSplitEditor: JumpParamsTuple[4];

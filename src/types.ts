@@ -126,10 +126,15 @@ export interface HighlightStore {
  */
 export interface HighlightViewModel {
   id: string;
+  codeSnippet: string;
   codeSnippetDisplay: string;
+  // Normalized lowercase version of `codeSnippetDisplay` for searching/filtering.
+  codeSnippetDisplaySearch: string;
+  codeHash: string;
   tag: string;
+  // Normalized lowercase version of `tag` for searching/filtering.
+  tagSearch: string;
   color: string;
-
   /**
    * Useful if the webview displays source location information.
    *
@@ -147,6 +152,8 @@ export interface HighlightViewModel {
  */
 export interface FileHighlightsViewModel {
   filePath: string;
+  // Normalized lowercase version of `filePath` for searching/filtering.
+  filePathSearch: string;
   highlights: HighlightViewModel[];
 }
 

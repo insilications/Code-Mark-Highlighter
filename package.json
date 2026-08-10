@@ -39,7 +39,7 @@
   },
   "dependencies": {
     "@vscode-elements/elements": "file:../elements",
-    "@vscode/codicons": "^0.0.46-24",
+    "@vscode/codicons": "^0.0.46-36",
     "litedent": "^0.1.0",
     "vscode-messenger": "^0.6.1",
     "vscode-messenger-common": "^0.6.1",
@@ -51,11 +51,11 @@
     "eslint": "^10.8.1",
     "eslint-plugin-legibility": "^0.3.0",
     "eslint-plugin-regexp": "^3.1.1",
-    "oxfmt": "^0.62.0",
-    "oxlint": "^1.76.0",
+    "oxfmt": "^0.63.0",
+    "oxlint": "^1.78.0",
     "oxlint-tsgolint": "^7.0.2001",
     "rolldown": "^1.2.3",
-    "typescript": "^7.1.0-dev.20260808.1"
+    "typescript": "^7.1.0-dev.20260810.1"
   },
   "contributes": {
     "commands": [

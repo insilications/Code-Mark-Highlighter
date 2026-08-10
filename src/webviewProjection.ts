@@ -33,38 +33,40 @@ const FILE_PATH_COLLATOR = new Intl.Collator(undefined, {
  * The Map itself continues to use exact JavaScript string identity.
  */
 export function compareFilePathsForDisplay(a: string, b: string): number {
-  const displayOrder = FILE_PATH_COLLATOR.compare(a, b);
+  const displayOrder: number = FILE_PATH_COLLATOR.compare(a, b);
 
-  return displayOrder !== 0 ? displayOrder : compareStringsOrdinal(a, b);
+  return displayOrder === 0 ? compareStringsOrdinal(a, b) : displayOrder;
 }
 
 /**
+ * Populates the `highlights` property of a file's webview model (`FileHighlightsViewModel`).
+ *
  * Converts only the fields currently useful to the webview.
  *
- * Keeping this separate from HighlightSerialized is intentional:
- *
- * Persistence model !== presentation model
+ * Persistence Model !== Presentation Model
  *
  * If the webview later needs updatedAt, for example, add it here rather than automatically
  * transmitting every runtime/storage field forever.
  */
-export function createHighlightViewModel(highlight: Highlight): HighlightViewModel {
-  return {
-    id: highlight.id,
-    codeSnippetDisplay: highlight.codeSnippetDisplay,
-    tag: highlight.tag,
-    color: highlight.color,
-    range: serializeRange(highlight.range),
-  };
-}
-
-/** Creates the highlight portion of one file's webview model. */
 export function createHighlightViewModels(highlights: readonly Highlight[]): HighlightViewModel[] {
   const result = new Array<HighlightViewModel>(highlights.length);
 
   for (let i: number = 0; i < highlights.length; i++) {
     // oxlint-disable-next-line typescript/no-non-null-assertion
-    result[i] = createHighlightViewModel(highlights[i]!);
+    const highlight: Highlight = highlights[i]!;
+    const codeSnippetDisplay: string = highlight.codeSnippetDisplay;
+    const tag: string = highlight.tag;
+    result[i] = {
+      id: highlight.id,
+      codeSnippet: highlight.codeSnippet,
+      codeSnippetDisplay,
+      codeSnippetDisplaySearch: codeSnippetDisplay.toLowerCase(),
+      codeHash: highlight.codeHash,
+      tag,
+      tagSearch: tag.toLowerCase(),
+      color: highlight.color,
+      range: serializeRange(highlight.range),
+    };
   }
 
   return result;

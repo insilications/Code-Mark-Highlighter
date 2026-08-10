@@ -2,11 +2,6 @@ import * as vscode from "vscode";
 
 import type { Highlight } from "./types";
 
-/** Generate a UUID v4 */
-export function uuidv4(): string {
-  return crypto.randomUUID();
-}
-
 /**
  * Compares two vscode.Range objects in document order.
  *
@@ -98,12 +93,13 @@ export function findHighlightInsertionIndex(
   highlights: readonly Highlight[],
   highlight: Highlight,
 ): number {
-  let low = 0;
-  let high = highlights.length;
+  let low: number = 0;
+  let high: number = highlights.length;
 
   while (low < high) {
-    const middle = low + ((high - low) >>> 1);
+    const middle: number = low + ((high - low) >>> 1);
 
+    // oxlint-disable-next-line typescript/no-non-null-assertion
     if (compareHighlightsByRange(highlights[middle]!, highlight) <= 0) {
       low = middle + 1;
     } else {
@@ -121,7 +117,7 @@ export function findHighlightInsertionIndex(
  * work.
  */
 export function insertHighlightSorted(highlights: Highlight[], highlight: Highlight): number {
-  const index = findHighlightInsertionIndex(highlights, highlight);
+  const index: number = findHighlightInsertionIndex(highlights, highlight);
 
   highlights.splice(index, 0, highlight);
 

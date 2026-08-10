@@ -1,11 +1,29 @@
+// oxlint-disable legibility/no-quadratic-patterns max-depth legibility/max-control-flow-depth
+import { HOST_EXTENSION } from "vscode-messenger-common";
 import { Messenger } from "vscode-messenger-webview";
 
-import type { FileHighlightsViewModel } from "../types";
-import { updateWebViewNotificationType } from "./sidebarProvider";
+import type { FileHighlightsViewModel, HighlightViewModel } from "../types";
+import {
+  jumpToHighlightNotificationType,
+  updateWebViewNotificationType,
+  webViewReadyNotificationType,
+} from "./sidebarProvider";
 // import { HOST_EXTENSION } from 'vscode-messenger-common';
 
 // This will be run within the WebView itself and cannot access the main VS Code APIs directly.
 (function (): void {
+  const escapeMap: Record<string, string> = {
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#039;",
+  };
+
+  // A single regex that matches any of the target characters for the `esc` function.
+  // oxlint-disable-next-line require-unicode-regexp
+  const escapeRegex = /[&<>"']/g;
+
   let fileHighlightsViewModel: FileHighlightsViewModel[] = [];
   // acquireVsCodeApi() is called automatically
   const messenger = new Messenger();
@@ -18,14 +36,19 @@ import { updateWebViewNotificationType } from "./sidebarProvider";
   });
   messenger.start();
 
-  let searchQuery: string = "";
-  let filterTag: string = "";
+  let searchNeedle: string = "";
+  let tagNeedle: string = "";
 
-  // const listEl = document.getElementById("list");
-  // const countEl = document.getElementById("count");
-  // const statsBar = document.getElementById("stats-bar");
-  // const statTotal = document.getElementById("stat-total");
-  // const statFiles = document.getElementById("stat-files");
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+  const listEl: HTMLDivElement = document.getElementById("list") as HTMLDivElement;
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+  const countEl: HTMLSpanElement = document.getElementById("count") as HTMLSpanElement;
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+  const statsBar: HTMLDivElement = document.getElementById("stats-bar") as HTMLDivElement;
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+  const statTotal: HTMLSpanElement = document.getElementById("stat-total") as HTMLSpanElement;
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+  const statFiles: HTMLSpanElement = document.getElementById("stat-files") as HTMLSpanElement;
 
   // oxlint-disable-next-line typescript/no-non-null-assertion
   const filterTagEl: HTMLSelectElement = document.getElementById(
@@ -50,13 +73,13 @@ import { updateWebViewNotificationType } from "./sidebarProvider";
   // // Search / filter
   searchEl.addEventListener("input", (e: Event): void => {
     // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-    searchQuery = (e.target as HTMLInputElement).value.toLowerCase();
-    // render();
+    searchNeedle = (e.target as HTMLInputElement).value.trim().toLowerCase();
+    render();
   });
   filterTagEl.addEventListener("change", (e: Event): void => {
     // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-    filterTag = (e.target as HTMLInputElement).value;
-    // render();
+    tagNeedle = (e.target as HTMLInputElement).value.trim().toLowerCase();
+    render();
   });
 
   function rebuildTagFilter(): void {
@@ -76,166 +99,328 @@ import { updateWebViewNotificationType } from "./sidebarProvider";
           `<option value="${t}" ${t === filterTagEl.value ? "selected" : ""}>${t}</option>`,
       )
       .join("")}`;
-
-    // filterTagEl.innerHTML =
-    //   '<option value="">All tags</option>' +
-    //   tags
-    //     .map(
-    //       (t) =>
-    //         `<option value="${esc(t)}" ${t === filterTagEl.value ? "selected" : ""}>${esc(t)}</option>`,
-    //     )
-    //     .join("");
   }
 
-  // function filteredHighlights() {
-  //   return allHighlights.filter(h => {
-  //     if (filterTag && h.tag !== filterTag) return false;
-  //     if (searchQuery) {
-  //       const haystack = ((h.tag || '') + ' ' + (h.codeSnippet || '') + ' ' + (h.filePath || '')).toLowerCase();
-  //       if (!haystack.includes(searchQuery)) return false;
-  //     }
-  //     return true;
-  //   });
-  // }
+  /**
+   * Filters file highlights by an optional tag query and/or text search query.
+   *
+   * Matching is case-insensitive and substring-based. The function expects the pre-normalized
+   * lowercase `filePathSearch`, `tagSearch`, and `codeSnippetDisplaySearch` properties to be kept
+   * in sync with their corresponding display values.
+   *
+   * A highlight is included when both of the following conditions are satisfied:
+   *
+   * 1. If `tagQuery` is non-empty, the highlight's `tagSearch` must contain the normalized tag query.
+   *    If `tagQuery` is empty, no tag filtering is applied.
+   * 2. If `searchQuery` is non-empty, either the containing file's `filePathSearch` or the highlight's
+   *    `codeSnippetDisplaySearch` must contain the normalized search query. If `searchQuery` is
+   *    empty, no text filtering is applied.
+   *
+   * Consequently, when both queries are provided, they are combined using AND semantics: a
+   * highlight must satisfy the tag filter and must also satisfy either the file-path or
+   * code-snippet search.
+   *
+   * Files for which no highlights satisfy the active filters are omitted from the returned array.
+   *
+   * If neither query is provided, the original `fileHighlightsViewModel` array is returned
+   * unchanged. The implementation may also reuse original file and highlight objects where
+   * filtering does not require constructing a reduced highlights array; callers therefore should
+   * not assume that the returned data is a deep copy.
+   *
+   * The function does not mutate `fileHighlightsViewModel` or any contained view model.
+   *
+   * @returns {FileHighlightsViewModel[]} The files containing highlights that satisfy the active
+   *   filters, with each file's `highlights` array containing only matching highlights. Returns the
+   *   original `fileHighlightsViewModel` array when both queries are empty.
+   */
+  function filterFileHighlights(): FileHighlightsViewModel[] {
+    // Nothing to filter.
+    if (!tagNeedle && !searchNeedle) {
+      return fileHighlightsViewModel;
+    }
 
-  // function render() {
-  //   const items = filteredHighlights();
-  //   countEl.textContent = items.length;
+    const fileHighlightsViewModelLength: number = fileHighlightsViewModel.length;
+    const result: FileHighlightsViewModel[] = [];
 
-  //   if (items.length === 0) {
-  //     if (allHighlights.length === 0) {
-  //       listEl.innerHTML = `<div class="empty">
-  //         <div class="empty-icon">✨</div>
-  //         <div class="empty-title">No highlights yet</div>
-  //         <div class="empty-sub">Select code → right-click<br>→ <strong>Code Mark: Highlight Code</strong></div>
-  //       </div>`;
-  //     } else {
-  //       listEl.innerHTML = `<div class="empty">
-  //         <div class="empty-icon">🔍</div>
-  //         <div class="empty-title">No results</div>
-  //         <div class="empty-sub">Try a different search or filter.</div>
-  //       </div>`;
-  //     }
-  //     statsBar.style.display = 'none';
-  //     return;
-  //   }
+    // Tag-only filtering.
+    if (tagNeedle && !searchNeedle) {
+      for (let i: number = 0; i < fileHighlightsViewModelLength; i++) {
+        // oxlint-disable-next-line typescript/no-non-null-assertion
+        const file: FileHighlightsViewModel = fileHighlightsViewModel[i]!;
+        const highlights: HighlightViewModel[] = file.highlights;
+        const matches: HighlightViewModel[] = [];
 
-  //   // Sort: by file then by range
-  //   // const sorted = [...items].sort((a, b) => {
-  //   //   // 1. Sort by file path alphabetically
-  //   //   const fileComparison = a.filePath.localeCompare(b.filePath);
-  //   //   if (fileComparison !== 0) {
-  //   //     return fileComparison;
-  //   //   }
+        for (let j: number = 0; j < highlights.length; j++) {
+          // oxlint-disable-next-line typescript/no-non-null-assertion
+          const highlight: HighlightViewModel = highlights[j]!;
 
-  //   //   // 2. Sort by range (if file paths are identical)
-  //   //   // Compare the starting line first
-  //   //   if (a.range[0].line !== b.range[0].line) {
-  //   //     return a.range[0].line - b.range[0].line;
-  //   //   }
+          if (highlight.tagSearch.includes(tagNeedle)) {
+            matches.push(highlight);
+          }
+        }
 
-  //   //   // If they are on the exact same line, compare the starting character
-  //   //   return a.range[0].character - b.range[0].character;
-  //   // });
+        // oxlint-disable-next-line unicorn/explicit-length-check
+        if (matches.length !== 0) {
+          result.push({
+            // oxlint-disable-next-line legibility/prefer-concat-object-assign
+            ...file,
+            highlights: matches,
+          });
+        }
+      }
 
-  //   const sortedFilePaths = Object.keys(items).sort((a, b) => {
-  //     // 1. Sort by file path alphabetically
-  //     const fileComparison = a.filePath.localeCompare(b.filePath);
-  //     if (fileComparison !== 0) {
-  //       return fileComparison;
-  //     }
-  //   });
+      return result;
+    }
 
-  //   const renderedCards = [];
-  //   for (const filePath of sortedFilePaths) {
-  //     const filePathsHighlights = items[filePath];
-  //     renderedCards.push(...filePathsHighlights.map(h => renderCard(h)));
-  //   }
+    // Search-only filtering.
+    if (!tagNeedle) {
+      for (let i: number = 0; i < fileHighlightsViewModelLength; i++) {
+        // oxlint-disable-next-line typescript/no-non-null-assertion
+        const file: FileHighlightsViewModel = fileHighlightsViewModel[i]!;
 
-  //   listEl.innerHTML = renderedCards.join('');
+        // A matching path means every highlight in the file matches.
+        if (file.filePathSearch.includes(searchNeedle)) {
+          result.push(file);
+          continue;
+        }
 
-  //   // Stats
-  //   const uniqueFiles = new Set(items.map(h => h.filePath)).size;
-  //   statTotal.textContent = items.length + ' highlight' + (items.length !== 1 ? 's' : '');
-  //   statFiles.textContent = uniqueFiles + ' file' + (uniqueFiles !== 1 ? 's' : '');
-  //   statsBar.style.display = 'flex';
+        const highlights = file.highlights;
+        const matches: HighlightViewModel[] = [];
 
-  //   // Bind card events
-  //   listEl.querySelectorAll('.card').forEach(card => {
-  //     const id = card.dataset.id;
-  //     const h = allHighlights.find(x => x.id === id);
-  //     if (!h) return;
+        for (let j: number = 0; j < highlights.length; j++) {
+          // oxlint-disable-next-line typescript/no-non-null-assertion
+          const highlight: HighlightViewModel = highlights[j]!;
 
-  //     card.addEventListener('click', (e) => {
-  //       if (e.target.closest('.card-actions')) return;
-  //       if (e.altKey) {
-  //         vscode.postMessage({ command: 'jumpTo', filePath: h.filePath, snippet: h.codeSnippet, hash: h.codeHash, jumpInSplitEditor: true });
-  //       } else {
-  //         vscode.postMessage({ command: 'jumpTo', filePath: h.filePath, snippet: h.codeSnippet, hash: h.codeHash, jumpInSplitEditor: false });
-  //       }
-  //     });
+          if (highlight.codeSnippetDisplaySearch.includes(searchNeedle)) {
+            matches.push(highlight);
+          }
+        }
 
-  //     card.querySelector('.btn-jump')?.addEventListener('click', (e) => {
-  //       e.stopPropagation();
-  //       if (e.altKey) {
-  //         vscode.postMessage({ command: 'jumpTo', filePath: h.filePath, snippet: h.codeSnippet, hash: h.codeHash, jumpInSplitEditor: true });
-  //       } else {
-  //         vscode.postMessage({ command: 'jumpTo', filePath: h.filePath, snippet: h.codeSnippet, hash: h.codeHash, jumpInSplitEditor: false });
-  //       }
-  //     });
-  //     card.querySelector('.btn-tag')?.addEventListener('click', (e) => {
-  //       e.stopPropagation();
-  //       vscode.postMessage({ command: 'editTag', id: h.id });
-  //     });
-  //     card.querySelector('.btn-color')?.addEventListener('click', (e) => {
-  //       e.stopPropagation();
-  //       vscode.postMessage({ command: 'changeColor', id: h.id });
-  //     });
-  //     card.querySelector('.btn-delete')?.addEventListener('click', (e) => {
-  //       e.stopPropagation();
-  //       vscode.postMessage({ command: 'delete', id: h.id });
-  //     });
-  //   });
-  // }
+        // oxlint-disable-next-line unicorn/explicit-length-check
+        if (matches.length !== 0) {
+          result.push({
+            // oxlint-disable-next-line legibility/prefer-concat-object-assign
+            ...file,
+            highlights: matches,
+          });
+        }
+      }
 
-  // function renderCard(h) {
-  //   const snippet = esc(h.codeSnippetDisplay.split('\\n').slice(0, 12).join('\\n'));
-  //   const fileName = esc(h.filePath);
-  //   const tagColor = esc(h.color);
-  //   const tagBg = hexToRgba(h.color, 0.18);
+      return result;
+    }
 
-  //   return `<div class="card" data-id="${esc(h.id)}" style="border: 1px solid ${tagColor};">
-  //     <div class="card-top">
-  //       ${h.tag ? `<span class="card-tag" style="background:${tagBg};color:${tagColor}">${esc(h.tag)}</span>` : ''}
-  //       <div class="card-actions">
-  //         <button class="btn btn-jump">↗ Jump</button>
-  //         <button class="btn btn-tag">🏷 Tag</button>
-  //         <button class="btn btn-color">🎨 Color</button>
-  //         <button class="btn btn-danger btn-delete">🗑</button>
-  //       </div>
-  //       <span class="card-file" title="${fileName}">${fileName}</span>
-  //     </div>
-  //     <div class="card-snippet">${snippet}</div>
-  //   </div>`;
+    // Both tag and search filtering.
+    for (let i: number = 0; i < fileHighlightsViewModelLength; i++) {
+      // oxlint-disable-next-line typescript/no-non-null-assertion
+      const file: FileHighlightsViewModel = fileHighlightsViewModel[i]!;
+      // oxlint-disable-next-line legibility/no-repeated-collection-search
+      const fileMatches: boolean = file.filePathSearch.includes(searchNeedle);
+      const highlights: HighlightViewModel[] = file.highlights;
+      const matches: HighlightViewModel[] = [];
+
+      for (let j: number = 0; j < highlights.length; j++) {
+        // oxlint-disable-next-line typescript/no-non-null-assertion
+        const highlight: HighlightViewModel = highlights[j]!;
+
+        // Tag filtering happens first, as required.
+        // oxlint-disable-next-line legibility/no-repeated-collection-search
+        if (!highlight.tagSearch.includes(tagNeedle)) {
+          continue;
+        }
+
+        // oxlint-disable-next-line legibility/no-repeated-collection-search
+        if (fileMatches || highlight.codeSnippetDisplaySearch.includes(searchNeedle)) {
+          matches.push(highlight);
+        }
+      }
+
+      // oxlint-disable-next-line unicorn/explicit-length-check
+      if (matches.length !== 0) {
+        result.push({
+          // oxlint-disable-next-line legibility/prefer-concat-object-assign
+          ...file,
+          highlights: matches,
+        });
+      }
+    }
+
+    return result;
+  }
+
+  function render() {
+    const filteredFileHighlights: FileHighlightsViewModel[] = filterFileHighlights();
+    // oxlint-disable-next-line prefer-template
+    countEl.textContent = "" + filteredFileHighlights.length;
+
+    if (filteredFileHighlights.length === 0) {
+      if (fileHighlightsViewModel.length === 0) {
+        listEl.innerHTML = `<div class="empty">
+          <div class="empty-icon">✨</div>
+          <div class="empty-title">No highlights yet</div>
+          <div class="empty-sub">Select code → right-click<br>→ <strong>Code Mark: Highlight Code</strong></div>
+        </div>`;
+      } else {
+        listEl.innerHTML = `<div class="empty">
+          <div class="empty-icon">🔍</div>
+          <div class="empty-title">No results</div>
+          <div class="empty-sub">Try a different search or filter.</div>
+        </div>`;
+      }
+      statsBar.style.display = "none";
+      return;
+    }
+
+    const renderedCards: string[] = [];
+    for (const filehighlight of filteredFileHighlights) {
+      // oxlint-disable-next-line legibility/no-single-use-renaming-alias
+      const filePath: string = filehighlight.filePath;
+      for (const highlight of filehighlight.highlights) {
+        renderedCards.push(renderCard(filePath, highlight));
+      }
+    }
+
+    listEl.innerHTML = renderedCards.join("");
+
+    // Stats
+    const uniqueFiles = new Set(filteredFileHighlights.map((h) => h.filePath)).size;
+    const totalHighlights = filteredFileHighlights.reduce(
+      (acc, fh) => acc + fh.highlights.length,
+      0,
+    );
+    statTotal.textContent = `${totalHighlights} highlight${totalHighlights === 1 ? "" : "s"}`;
+    statFiles.textContent = `${uniqueFiles} file${uniqueFiles === 1 ? "" : "s"}`;
+    statsBar.style.display = "flex";
+
+    // Bind card events
+    const renderedCardsList: NodeListOf<HTMLDivElement> = listEl.querySelectorAll(".card");
+    for (let i: number = 0; i < renderedCardsList.length; i++) {
+      // oxlint-disable-next-line typescript/no-non-null-assertion
+      const renderedCard: HTMLDivElement = renderedCardsList[i]!;
+      // oxlint-disable-next-line legibility/no-single-use-renaming-alias
+      const renderedCardId: string | undefined = renderedCard.dataset.id;
+      for (let j: number = 0; j < filteredFileHighlights.length; j++) {
+        // oxlint-disable-next-line typescript/no-non-null-assertion
+        const fileHighlight: FileHighlightsViewModel = filteredFileHighlights[j]!;
+        const fileHighlightHighlights: HighlightViewModel[] = fileHighlight.highlights;
+        for (let k: number = 0; k < fileHighlightHighlights.length; k++) {
+          // oxlint-disable-next-line typescript/no-non-null-assertion
+          const highlight: HighlightViewModel = fileHighlightHighlights[k]!;
+          if (highlight.id === renderedCardId) {
+            const card: HTMLDivElement | undefined = renderedCardsList[i];
+            if (card) {
+              card.addEventListener("click", (e: PointerEvent) => {
+                // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+                if ((e.target as HTMLDivElement | null)?.closest(".card-actions")) {
+                  return;
+                }
+                if (e.altKey) {
+                  messenger.sendNotification(jumpToHighlightNotificationType, HOST_EXTENSION, {
+                    filePath: fileHighlight.filePath,
+                    codeSnippet: highlight.codeSnippet,
+                    codeHash: highlight.codeHash,
+                    fuzzyThreshold: 0.75,
+                    jumpInSplitEditor: true,
+                  });
+                } else {
+                  messenger.sendNotification(jumpToHighlightNotificationType, HOST_EXTENSION, {
+                    filePath: fileHighlight.filePath,
+                    codeSnippet: highlight.codeSnippet,
+                    codeHash: highlight.codeHash,
+                    fuzzyThreshold: 0.75,
+                    jumpInSplitEditor: false,
+                  });
+                }
+              });
+              const jumpButton: HTMLButtonElement | null = card.querySelector(".btn-jump");
+              jumpButton?.addEventListener("click", (e: PointerEvent) => {
+                e.stopPropagation();
+                if (e.altKey) {
+                  messenger.sendNotification(jumpToHighlightNotificationType, HOST_EXTENSION, {
+                    filePath: fileHighlight.filePath,
+                    codeSnippet: highlight.codeSnippet,
+                    codeHash: highlight.codeHash,
+                    fuzzyThreshold: 0.75,
+                    jumpInSplitEditor: true,
+                  });
+                } else {
+                  messenger.sendNotification(jumpToHighlightNotificationType, HOST_EXTENSION, {
+                    filePath: fileHighlight.filePath,
+                    codeSnippet: highlight.codeSnippet,
+                    codeHash: highlight.codeHash,
+                    fuzzyThreshold: 0.75,
+                    jumpInSplitEditor: false,
+                  });
+                }
+              });
+              const tagButton: HTMLButtonElement | null = card.querySelector(".btn-tag");
+              tagButton?.addEventListener("click", (e) => {
+                e.stopPropagation();
+                console.log("Tag button clicked for highlight id:", highlight.id);
+                //   vscode.postMessage({ command: "editTag", id: h.id });
+              });
+              const colorButton: HTMLButtonElement | null = card.querySelector(".btn-color");
+              colorButton?.addEventListener("click", (e) => {
+                e.stopPropagation();
+                console.log("Color button clicked for highlight id:", highlight.id);
+                //   vscode.postMessage({ command: "changeColor", id: h.id });
+              });
+              const deleteButton: HTMLButtonElement | null = card.querySelector(".btn-delete");
+              deleteButton?.addEventListener("click", (e) => {
+                e.stopPropagation();
+                console.log("Delete button clicked for highlight id:", highlight.id);
+                //   vscode.postMessage({ command: "delete", id: h.id });
+              });
+            }
+          }
+        }
+      }
+    }
+  }
+
+  function renderCard(filePath: string, highlight: HighlightViewModel): string {
+    const snippet = esc(highlight.codeSnippetDisplay.split("\\n").slice(0, 12).join("\\n"));
+    const fileName = esc(filePath);
+    const tagColor = esc(highlight.color);
+    const tagBg = hexToRgba(highlight.color, 0.18);
+
+    return `<div class="card" data-id="${esc(highlight.id)}" style="border: 1px solid ${tagColor};">
+      <div class="card-top">
+        ${highlight.tag ? `<span class="card-tag" style="background:${tagBg};color:${tagColor}">${esc(highlight.tag)}</span>` : ""}
+        <div class="card-actions">
+          <button class="btn btn-jump">↗ Jump</button>
+          <button class="btn btn-tag">🏷 Tag</button>
+          <button class="btn btn-color">🎨 Color</button>
+          <button class="btn btn-danger btn-delete">🗑</button>
+        </div>
+        <span class="card-file" title="${fileName}">${fileName}</span>
+      </div>
+      <div class="card-snippet">${snippet}</div>
+    </div>`;
+  }
+
+  // function esc(str: unknown): string {
+  //   return String(str)
+  //     .replace(/&/g, "&amp;")
+  //     .replace(/</g, "&lt;")
+  //     .replace(/>/g, "&gt;")
+  //     .replace(/"/g, "&quot;")
+  //     .replace(/'/g, "&#039;");
   // }
 
   function esc(str: unknown): string {
-    return String(str)
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#039;");
+    const s: string = String(str);
+    // oxlint-disable-next-line typescript/no-non-null-assertion
+    return s.replace(escapeRegex, (match) => escapeMap[match]!);
   }
 
-  // function hexToRgba(hex: string, alpha: number): string {
-  //   const clean = hex.replace('#', '');
-  //   const r = parseInt(clean.substring(0, 2), 16);
-  //   const g = parseInt(clean.substring(2, 4), 16);
-  //   const b = parseInt(clean.substring(4, 6), 16);
-  //   return `rgba(${r},${g},${b},${alpha})`;
-  // }
+  function hexToRgba(hex: string, alpha: number): string {
+    const clean: string = hex.replace("#", "");
+    const r: number = parseInt(clean.slice(0, 2), 16);
+    const g: number = parseInt(clean.slice(2, 4), 16);
+    const b: number = parseInt(clean.slice(4, 6), 16);
+    return `rgba(${r},${g},${b},${alpha})`;
+  }
 
-  // // Notify extension we're ready
-  // vscode.postMessage({ command: 'ready' });
+  //Notify extension we're ready
+  messenger.sendNotification(webViewReadyNotificationType, HOST_EXTENSION);
 })();
