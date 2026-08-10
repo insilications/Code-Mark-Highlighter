@@ -4,12 +4,16 @@
 import * as fs from "node:fs";
 
 import * as vscode from "vscode";
+import { type Messenger } from "vscode-messenger";
 import { NotificationType } from "vscode-messenger-common";
 
+import { applyHighlightsToEditor } from "../decorationManager";
+import { jumpToHighlight } from "../highlightNavigator";
 import type { HighlightRepository } from "../highlightRepository";
-import { removeHighlight } from "../storage";
-import type { FileHighlightsViewModel } from "../types";
-import type { IJumpToHighlightParams, onActionData } from "../webView/types";
+import { getHighlightsForFile, getWorkspaceRelativePath } from "../storage";
+import type { FileHighlightsViewModel, Highlight } from "../types";
+import { getFuzzyThreshold } from "../utils";
+import type { IJumpToHighlightParams } from "../webView/types";
 
 // =====================================================================
 // WebView message types — declare once, import on both sides
@@ -17,24 +21,30 @@ import type { IJumpToHighlightParams, onActionData } from "../webView/types";
 export const jumpToHighlightNotificationType: NotificationType<IJumpToHighlightParams> = {
   method: "jumpToHighlight",
 };
-export const refreshNotificationType: NotificationType<void> = {
-  method: "refresh",
+export const webViewReadyNotificationType: NotificationType<void> = {
+  method: "webViewReady",
+};
+export const refreshActiveEditorNotificationType: NotificationType<void> = {
+  method: "refreshActiveEditor",
+};
+export const updateWebViewNotificationType: NotificationType<FileHighlightsViewModel[]> = {
+  method: "updateWebView",
 };
 
 export class SidebarProvider implements vscode.WebviewViewProvider {
   public static readonly VIEW_ID = "codemark.highlightsPanel";
   private readonly extensionUri: vscode.Uri;
   private view?: vscode.WebviewView;
-  private mainWebViewScriptUri: vscode.Uri;
+  // private mainWebViewScriptUri: vscode.Uri;
   private mainWebViewHtmlUri: vscode.Uri;
 
   constructor(
-    private readonly context: vscode.ExtensionContext,
+    private readonly extensionContext: vscode.ExtensionContext,
+    private readonly messenger: Messenger,
     private readonly highlightRepository: HighlightRepository,
-    private readonly onAction: (data: onActionData) => Promise<void>,
   ) {
-    this.extensionUri = context.extensionUri;
-    this.mainWebViewScriptUri = vscode.Uri.joinPath(this.extensionUri, "out", "mainWebView.js");
+    this.extensionUri = extensionContext.extensionUri;
+    // this.mainWebViewScriptUri = vscode.Uri.joinPath(this.extensionUri, "out", "mainWebView.js");
     this.mainWebViewHtmlUri = vscode.Uri.joinPath(
       this.extensionUri,
       "src",
@@ -49,537 +59,550 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
     _token: vscode.CancellationToken,
   ): void {
     this.view = webviewView;
-
     webviewView.webview.options = {
+      // Allow scripts in the webview
       enableScripts: true,
       localResourceRoots: [this.extensionUri],
     };
 
     webviewView.webview.html = this.buildHtmlForWebView(webviewView.webview);
-    this.setMessageListener(webviewView.webview);
-    this.refresh();
+
+    // Register the WebView with the messenger for communication
+    this.messenger.registerWebviewView(webviewView);
+
+    // =====================================================================
+    // WebView Messaging Listeners
+    // =====================================================================
+    const disposables: vscode.Disposable[] = [
+      this.messenger.onNotification(
+        jumpToHighlightNotificationType,
+        async (data: IJumpToHighlightParams): Promise<void> => {
+          await jumpToHighlight(
+            data.filePath,
+            data.snippet,
+            data.codeHash,
+            getFuzzyThreshold(),
+            data.jumpInSplitEditor,
+          );
+        },
+      ),
+      this.messenger.onNotification(webViewReadyNotificationType, (): void => {
+        this.refreshSidebar();
+      }),
+      this.messenger.onNotification(refreshActiveEditorNotificationType, (): void => {
+        this.refreshActiveEditor(this.extensionContext);
+      }),
+    ];
+    webviewView.onDidDispose(() => {
+      for (const disposable of disposables) {
+        disposable.dispose();
+      }
+    });
+
+    // this.refresh();
   }
 
-  public refresh(): void {
+  public refreshSidebar(): void {
+    // Is this necessary? The webview should be ready when this is called, but just in case.
     if (!this.view) {
       return;
     }
-    // const highlights = loadHighlights(this._context);
+
     const fileHighlightsViewModel: FileHighlightsViewModel[] =
       this.highlightRepository.createWebviewModel();
-    this.view.webview.postMessage({ type: "update", fileHighlightsViewModel });
-  }
-
-  public get webview(): vscode.WebviewView | undefined {
-    return this.view;
+    this.messenger.sendNotification(
+      updateWebViewNotificationType,
+      { type: "webview", webviewType: SidebarProvider.VIEW_ID },
+      fileHighlightsViewModel,
+    );
   }
 
   public reveal(): void {
     this.view?.show(true);
   }
 
-  private setMessageListener(webview: vscode.Webview): void {
-    webview.onDidReceiveMessage(
-      async (msg: {
-        command: string;
-        id?: string;
-        filePath?: string;
-        snippet?: string;
-        hash?: string;
-        jumpInSplitEditor?: boolean;
-      }) => {
-        switch (msg.command) {
-          case "jumpTo":
-            await this.onAction({
-              id: "jumpTo",
-              filePath: msg.filePath,
-              snippet: msg.snippet,
-              codeHash: msg.hash,
-              jumpInSplitEditor: msg.jumpInSplitEditor,
-            });
-            break;
-          case "delete":
-            if (msg.id) {
-              removeHighlight(this.context, msg.id);
-              this.refresh();
-              await this.onAction({ id: "refresh" });
-            }
-            break;
-          case "editTag":
-            await this.onAction({ id: "editTag", highlightId: msg.id, newTag: "" });
-            break;
-          case "changeColor":
-            await this.onAction({ id: "changeColor", highlightId: msg.id, newColor: "" });
-            break;
-          case "ready":
-            this.refresh();
-            break;
-        }
-      },
-      undefined,
-      this.context.subscriptions,
-    );
+  public applyForEditor(
+    editor: vscode.TextEditor,
+    extensionContext: vscode.ExtensionContext,
+  ): void {
+    const filePath: string = getWorkspaceRelativePath(editor.document.uri);
+    const highlights: Highlight[] = getHighlightsForFile(extensionContext, filePath);
+    applyHighlightsToEditor(editor, highlights, getFuzzyThreshold());
+  }
+
+  public refreshActiveEditor(extensionContext: vscode.ExtensionContext): void {
+    const editor = vscode.window.activeTextEditor;
+    if (editor) {
+      this.applyForEditor(editor, extensionContext);
+    }
   }
 
   private buildHtmlForWebView(webview: vscode.Webview): string {
-    const scriptUri: vscode.Uri = webview.asWebviewUri(this.mainWebViewScriptUri);
     const htmlContent: string = fs.readFileSync(this.mainWebViewHtmlUri.fsPath, "utf-8");
-    const nonce: string = getNonce();
-    return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-${nonce}';">
-  <title>Code Mark Highlighter</title>
-  <style nonce="${nonce}">
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    :root {
-      --dm-bg: var(--vscode-sideBar-background, #1e1e2e);
-      --dm-fg: var(--vscode-foreground, #cdd6f4);
-      --dm-muted: var(--vscode-descriptionForeground, #7f849c);
-      --dm-border: var(--vscode-panel-border, #313244);
-      --dm-input-bg: var(--vscode-input-background, #181825);
-      --dm-hover: var(--vscode-list-hoverBackground, #2a2a3c);
-      --dm-accent: var(--vscode-focusBorder, #89b4fa);
-      --dm-btn: var(--vscode-button-background, #89b4fa);
-      --dm-btn-fg: var(--vscode-button-foreground, #1e1e2e);
-      --dm-danger: #f38ba8;
-      --dm-radius: 8px;
-      --dm-font: var(--vscode-font-family, 'Segoe UI', system-ui, sans-serif);
-      --dm-mono: var(--vscode-editor-font-family, 'Cascadia Code', 'Fira Code', monospace);
-    }
-
-    body {
-      font-family: var(--dm-font);
-      font-size: 13px;
-      color: var(--dm-fg);
-      background: var(--dm-bg);
-      overflow-x: hidden;
-      height: 100vh;
-      display: flex;
-      flex-direction: column;
-    }
-
-    /* ── Header ── */
-    .header {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 12px 12px 8px;
-      border-bottom: 1px solid var(--dm-border);
-      flex-shrink: 0;
-    }
-    .header-logo {
-      font-size: 16px;
-    }
-    .header-title {
-      font-weight: 700;
-      font-size: 13px;
-      letter-spacing: 0.5px;
-      flex: 1;
-    }
-    .header-count {
-      font-size: 11px;
-      color: var(--dm-muted);
-      background: var(--dm-input-bg);
-      border-radius: 10px;
-      padding: 2px 7px;
-    }
-
-    /* ── Filter Bar ── */
-    .filter-bar {
-      padding: 8px 12px;
-      display: flex;
-      gap: 6px;
-      flex-shrink: 0;
-      border-bottom: 1px solid var(--dm-border);
-    }
-    .filter-bar input {
-      flex: 1;
-      background: var(--dm-input-bg);
-      border: 1px solid var(--dm-border);
-      border-radius: 6px;
-      color: var(--dm-fg);
-      font-family: var(--dm-font);
-      font-size: 12px;
-      padding: 5px 8px;
-      outline: none;
-      transition: border-color 0.15s;
-    }
-    .filter-bar input:focus {
-      border-color: var(--dm-accent);
-    }
-    .filter-bar select {
-      background: var(--dm-input-bg);
-      border: 1px solid var(--dm-border);
-      border-radius: 6px;
-      color: var(--dm-fg);
-      font-family: var(--dm-font);
-      font-size: 12px;
-      padding: 5px 6px;
-      outline: none;
-      cursor: pointer;
-    }
-
-    /* ── List ── */
-    .list {
-      flex: 1;
-      overflow-y: auto;
-      padding: 6px 0;
-    }
-    .list::-webkit-scrollbar { width: 4px; }
-    .list::-webkit-scrollbar-track { background: transparent; }
-    .list::-webkit-scrollbar-thumb { background: var(--dm-border); border-radius: 4px; }
-
-    /* ── Highlight Card ── */
-    .card {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-      margin: 3px 3px;
-      padding: 8px 10px 8px 10px;
-      background: var(--dm-input-bg);
-      border: 1px solid var(--dm-border);
-      border-radius: var(--dm-radius);
-      cursor: pointer;
-      transition: background 0.12s, transform 0.1s;
-      position: relative;
-      animation: fadeIn 0.2s ease;
-    }
-    .card:hover {
-      background: var(--dm-hover);
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; }
-      to   { opacity: 1; }
-    }
-
-    .card-top {
-      display: flex;
-      align-items: center;
-      gap: 2px;
-      justify-content: center;
-      align-content: center;
-      flex-wrap: nowrap;
-    }
-    .card-tag {
-      font-size: 10px;
-      font-weight: 700;
-      letter-spacing: 0.6px;
-      text-transform: uppercase;
-      padding: 1px 6px;
-      border-radius: 4px;
-      opacity: 0.9;
-      flex-shrink: 0;
-    }
-    .card-file {
-      font-size: 10px;
-      color: var(--dm-muted);
-      margin-left: auto;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      max-width: 120px;
-    }
-
-    .card-snippet {
-      font-family: var(--dm-mono);
-      font-size: 10.5px;
-      color: var(--dm-muted);
-      text-overflow: ellipsis;
-      overflow: hidden;
-      white-space: preserve nowrap;
-      background: var(--dm-bg);
-      padding: 6px 3px;
-      border-radius: 4px;
-      border: 1px solid var(--dm-border);
-    }
-
-    .card-actions {
-      display: flex;
-      gap: 1px;
-      opacity: 0;
-      transition: opacity 0.15s;
-    }
-    .card:hover .card-actions { opacity: 1; }
-
-    .btn {
-      font-size: 10px;
-      font-family: var(--dm-font);
-      padding: 2px 7px;
-      border-radius: 4px;
-      border: 1px solid var(--dm-border);
-      background: var(--dm-hover);
-      color: var(--dm-fg);
-      cursor: pointer;
-      transition: background 0.12s, border-color 0.12s;
-    }
-    .btn:hover { background: var(--dm-accent); color: var(--dm-btn-fg); border-color: var(--dm-accent); }
-    .btn-danger:hover { background: var(--dm-danger); color: #fff; border-color: var(--dm-danger); }
-    .btn-jump { font-weight: 600; }
-
-    /* ── Empty State ── */
-    .empty {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      padding: 40px 20px;
-      color: var(--dm-muted);
-      text-align: center;
-    }
-    .empty-icon { font-size: 40px; opacity: 0.5; }
-    .empty-title { font-size: 13px; font-weight: 600; }
-    .empty-sub { font-size: 11px; line-height: 1.5; }
-
-    /* ── Stats Bar ── */
-    .stats-bar {
-      display: flex;
-      padding: 6px 12px;
-      gap: 8px;
-      font-size: 10px;
-      color: var(--dm-muted);
-      border-top: 1px solid var(--dm-border);
-      flex-shrink: 0;
-    }
-    .stats-bar span { display: flex; align-items: center; gap: 3px; }
-  </style>
-</head>
-<body>
-
-  <!-- Header -->
-  <div class="header">
-    <span class="header-logo">🔖</span>
-    <span class="header-title">Code Mark</span>
-    <span class="header-count" id="count">0</span>
-  </div>
-
-  <!-- Filter Bar -->
-  <div class="filter-bar">
-    <input id="search" type="text" placeholder="Search tags, code…" />
-    <select id="filter-tag">
-      <option value="">All tags</option>
-    </select>
-  </div>
-
-  <!-- Highlight List -->
-  <div class="list" id="list">
-    <div class="empty">
-      <div class="empty-icon">✨</div>
-      <div class="empty-title">No highlights yet</div>
-      <div class="empty-sub">Select code → right-click<br>→ <strong>Code Mark: Highlight Code</strong></div>
-    </div>
-  </div>
-
-  <!-- Stats Bar -->
-  <div class="stats-bar" id="stats-bar" style="display:none">
-    <span id="stat-total">0 highlights</span>
-    <span>·</span>
-    <span id="stat-files">0 files</span>
-  </div>
-
-  <script nonce="${nonce}">
-    const vscode = acquireVsCodeApi();
-    let fileHighlightsViewModel = [];
-    let searchQuery = '';
-    let filterTag = '';
-
-    const listEl = document.getElementById('list');
-    const countEl = document.getElementById('count');
-    const statsBar = document.getElementById('stats-bar');
-    const statTotal = document.getElementById('stat-total');
-    const statFiles = document.getElementById('stat-files');
-    const filterTagEl = document.getElementById('filter-tag');
-    const searchEl = document.getElementById('search');
-
-    // Receive updates from extension
-    window.addEventListener('message', (event) => {
-      const msg = event.data;
-      if (msg.type === 'update') {
-        fileHighlightsViewModel = msg.fileHighlightsViewModel ?? {};
-        console.log('fileHighlightsViewModel: ', fileHighlightsViewModel);
-        rebuildTagFilter();
-        render();
-      }
-    });
-
-    // Search / filter
-    searchEl.addEventListener('input', (e) => {
-      searchQuery = e.target.value.toLowerCase();
-      render();
-    });
-    filterTagEl.addEventListener('change', (e) => {
-      filterTag = e.target.value;
-      render();
-    });
-
-    function rebuildTagFilter() {
-      const tags = [...new Set(allHighlights.map(h => h.tag).filter(Boolean))].sort();
-      const current = filterTagEl.value;
-      filterTagEl.innerHTML = '<option value="">All tags</option>' +
-        tags.map(t => \`<option value="\${esc(t)}" \${t === current ? 'selected' : ''}>\${esc(t)}</option>\`).join('');
-    }
-
-    function filteredHighlights() {
-      return allHighlights.filter(h => {
-        if (filterTag && h.tag !== filterTag) return false;
-        if (searchQuery) {
-          const haystack = ((h.tag || '') + ' ' + (h.codeSnippet || '') + ' ' + (h.filePath || '')).toLowerCase();
-          if (!haystack.includes(searchQuery)) return false;
-        }
-        return true;
-      });
-    }
-
-    function render() {
-      const items = filteredHighlights();
-      countEl.textContent = items.length;
-
-      if (items.length === 0) {
-        if (allHighlights.length === 0) {
-          listEl.innerHTML = \`<div class="empty">
-            <div class="empty-icon">✨</div>
-            <div class="empty-title">No highlights yet</div>
-            <div class="empty-sub">Select code → right-click<br>→ <strong>Code Mark: Highlight Code</strong></div>
-          </div>\`;
-        } else {
-          listEl.innerHTML = \`<div class="empty">
-            <div class="empty-icon">🔍</div>
-            <div class="empty-title">No results</div>
-            <div class="empty-sub">Try a different search or filter.</div>
-          </div>\`;
-        }
-        statsBar.style.display = 'none';
-        return;
-      }
-
-      // Sort: by file then by range
-      // const sorted = [...items].sort((a, b) => {
-      //   // 1. Sort by file path alphabetically
-      //   const fileComparison = a.filePath.localeCompare(b.filePath);
-      //   if (fileComparison !== 0) {
-      //     return fileComparison;
-      //   }
-
-      //   // 2. Sort by range (if file paths are identical)
-      //   // Compare the starting line first
-      //   if (a.range[0].line !== b.range[0].line) {
-      //     return a.range[0].line - b.range[0].line;
-      //   }
-
-      //   // If they are on the exact same line, compare the starting character
-      //   return a.range[0].character - b.range[0].character;
-      // });
-
-      const sortedFilePaths = Object.keys(items).sort((a, b) => {
-        // 1. Sort by file path alphabetically
-        const fileComparison = a.filePath.localeCompare(b.filePath);
-        if (fileComparison !== 0) {
-          return fileComparison;
-        }
-      });
-
-      const renderedCards = [];
-      for (const filePath of sortedFilePaths) {
-        const filePathsHighlights = items[filePath];
-        renderedCards.push(...filePathsHighlights.map(h => renderCard(h)));
-      }
-
-      listEl.innerHTML = renderedCards.join('');
-
-      // Stats
-      const uniqueFiles = new Set(items.map(h => h.filePath)).size;
-      statTotal.textContent = items.length + ' highlight' + (items.length !== 1 ? 's' : '');
-      statFiles.textContent = uniqueFiles + ' file' + (uniqueFiles !== 1 ? 's' : '');
-      statsBar.style.display = 'flex';
-
-      // Bind card events
-      listEl.querySelectorAll('.card').forEach(card => {
-        const id = card.dataset.id;
-        const h = allHighlights.find(x => x.id === id);
-        if (!h) return;
-
-        card.addEventListener('click', (e) => {
-          if (e.target.closest('.card-actions')) return;
-          if (e.altKey) {
-            vscode.postMessage({ command: 'jumpTo', filePath: h.filePath, snippet: h.codeSnippet, hash: h.codeHash, jumpInSplitEditor: true });
-          } else {
-            vscode.postMessage({ command: 'jumpTo', filePath: h.filePath, snippet: h.codeSnippet, hash: h.codeHash, jumpInSplitEditor: false });
-          }
-        });
-
-        card.querySelector('.btn-jump')?.addEventListener('click', (e) => {
-          e.stopPropagation();
-          if (e.altKey) {
-            vscode.postMessage({ command: 'jumpTo', filePath: h.filePath, snippet: h.codeSnippet, hash: h.codeHash, jumpInSplitEditor: true });
-          } else {
-            vscode.postMessage({ command: 'jumpTo', filePath: h.filePath, snippet: h.codeSnippet, hash: h.codeHash, jumpInSplitEditor: false });
-          }
-        });
-        card.querySelector('.btn-tag')?.addEventListener('click', (e) => {
-          e.stopPropagation();
-          vscode.postMessage({ command: 'editTag', id: h.id });
-        });
-        card.querySelector('.btn-color')?.addEventListener('click', (e) => {
-          e.stopPropagation();
-          vscode.postMessage({ command: 'changeColor', id: h.id });
-        });
-        card.querySelector('.btn-delete')?.addEventListener('click', (e) => {
-          e.stopPropagation();
-          vscode.postMessage({ command: 'delete', id: h.id });
-        });
-      });
-    }
-
-    function renderCard(h) {
-      const snippet = esc(h.codeSnippetDisplay.split('\\n').slice(0, 12).join('\\n'));
-      const fileName = esc(h.filePath);
-      const tagColor = esc(h.color);
-      const tagBg = hexToRgba(h.color, 0.18);
-
-      return \`<div class="card" data-id="\${esc(h.id)}" style="border: 1px solid \${tagColor};">
-        <div class="card-top">
-          \${h.tag ? \`<span class="card-tag" style="background:\${tagBg};color:\${tagColor}">\${esc(h.tag)}</span>\` : ''}
-          <div class="card-actions">
-            <button class="btn btn-jump">↗ Jump</button>
-            <button class="btn btn-tag">🏷 Tag</button>
-            <button class="btn btn-color">🎨 Color</button>
-            <button class="btn btn-danger btn-delete">🗑</button>
-          </div>
-          <span class="card-file" title="\${fileName}">\${fileName}</span>
-        </div>
-        <div class="card-snippet">\${snippet}</div>
-      </div>\`;
-    }
-
-    function esc(str) {
-      return String(str)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#039;');
-    }
-
-    function hexToRgba(hex, alpha) {
-      const clean = hex.replace('#', '');
-      const r = parseInt(clean.substring(0, 2), 16);
-      const g = parseInt(clean.substring(2, 4), 16);
-      const b = parseInt(clean.substring(4, 6), 16);
-      return \`rgba(\${r},\${g},\${b},\${alpha})\`;
-    }
-
-    // Notify extension we're ready
-    vscode.postMessage({ command: 'ready' });
-  </script>
-</body>
-</html>`;
+    return htmlContent.replaceAll("NNNN", getNonce());
   }
+
+  // private buildHtmlForWebView2(webview: vscode.Webview): string {
+  //   const scriptUri: vscode.Uri = webview.asWebviewUri(this.mainWebViewScriptUri);
+  //   const htmlContent: string = fs.readFileSync(this.mainWebViewHtmlUri.fsPath, "utf-8");
+
+  //   const finalHtmlContent = htmlContent.replaceAll("NNNN", getNonce());
+  //   return `<!DOCTYPE html>
+  // <html lang="en">
+  // <head>
+  //   <meta charset="UTF-8">
+  //   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  //   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-${nonce}';">
+  //   <title>Code Mark Highlighter</title>
+  //   <style nonce="${nonce}">
+  //     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  //     :root {
+  //       --dm-bg: var(--vscode-sideBar-background, #1e1e2e);
+  //       --dm-fg: var(--vscode-foreground, #cdd6f4);
+  //       --dm-muted: var(--vscode-descriptionForeground, #7f849c);
+  //       --dm-border: var(--vscode-panel-border, #313244);
+  //       --dm-input-bg: var(--vscode-input-background, #181825);
+  //       --dm-hover: var(--vscode-list-hoverBackground, #2a2a3c);
+  //       --dm-accent: var(--vscode-focusBorder, #89b4fa);
+  //       --dm-btn: var(--vscode-button-background, #89b4fa);
+  //       --dm-btn-fg: var(--vscode-button-foreground, #1e1e2e);
+  //       --dm-danger: #f38ba8;
+  //       --dm-radius: 8px;
+  //       --dm-font: var(--vscode-font-family, 'Segoe UI', system-ui, sans-serif);
+  //       --dm-mono: var(--vscode-editor-font-family, 'Cascadia Code', 'Fira Code', monospace);
+  //     }
+
+  //     body {
+  //       font-family: var(--dm-font);
+  //       font-size: 13px;
+  //       color: var(--dm-fg);
+  //       background: var(--dm-bg);
+  //       overflow-x: hidden;
+  //       height: 100vh;
+  //       display: flex;
+  //       flex-direction: column;
+  //     }
+
+  //     /* ── Header ── */
+  //     .header {
+  //       display: flex;
+  //       align-items: center;
+  //       gap: 8px;
+  //       padding: 12px 12px 8px;
+  //       border-bottom: 1px solid var(--dm-border);
+  //       flex-shrink: 0;
+  //     }
+  //     .header-logo {
+  //       font-size: 16px;
+  //     }
+  //     .header-title {
+  //       font-weight: 700;
+  //       font-size: 13px;
+  //       letter-spacing: 0.5px;
+  //       flex: 1;
+  //     }
+  //     .header-count {
+  //       font-size: 11px;
+  //       color: var(--dm-muted);
+  //       background: var(--dm-input-bg);
+  //       border-radius: 10px;
+  //       padding: 2px 7px;
+  //     }
+
+  //     /* ── Filter Bar ── */
+  //     .filter-bar {
+  //       padding: 8px 12px;
+  //       display: flex;
+  //       gap: 6px;
+  //       flex-shrink: 0;
+  //       border-bottom: 1px solid var(--dm-border);
+  //     }
+  //     .filter-bar input {
+  //       flex: 1;
+  //       background: var(--dm-input-bg);
+  //       border: 1px solid var(--dm-border);
+  //       border-radius: 6px;
+  //       color: var(--dm-fg);
+  //       font-family: var(--dm-font);
+  //       font-size: 12px;
+  //       padding: 5px 8px;
+  //       outline: none;
+  //       transition: border-color 0.15s;
+  //     }
+  //     .filter-bar input:focus {
+  //       border-color: var(--dm-accent);
+  //     }
+  //     .filter-bar select {
+  //       background: var(--dm-input-bg);
+  //       border: 1px solid var(--dm-border);
+  //       border-radius: 6px;
+  //       color: var(--dm-fg);
+  //       font-family: var(--dm-font);
+  //       font-size: 12px;
+  //       padding: 5px 6px;
+  //       outline: none;
+  //       cursor: pointer;
+  //     }
+
+  //     /* ── List ── */
+  //     .list {
+  //       flex: 1;
+  //       overflow-y: auto;
+  //       padding: 6px 0;
+  //     }
+  //     .list::-webkit-scrollbar { width: 4px; }
+  //     .list::-webkit-scrollbar-track { background: transparent; }
+  //     .list::-webkit-scrollbar-thumb { background: var(--dm-border); border-radius: 4px; }
+
+  //     /* ── Highlight Card ── */
+  //     .card {
+  //       display: flex;
+  //       flex-direction: column;
+  //       gap: 4px;
+  //       margin: 3px 3px;
+  //       padding: 8px 10px 8px 10px;
+  //       background: var(--dm-input-bg);
+  //       border: 1px solid var(--dm-border);
+  //       border-radius: var(--dm-radius);
+  //       cursor: pointer;
+  //       transition: background 0.12s, transform 0.1s;
+  //       position: relative;
+  //       animation: fadeIn 0.2s ease;
+  //     }
+  //     .card:hover {
+  //       background: var(--dm-hover);
+  //     }
+
+  //     @keyframes fadeIn {
+  //       from { opacity: 0; }
+  //       to   { opacity: 1; }
+  //     }
+
+  //     .card-top {
+  //       display: flex;
+  //       align-items: center;
+  //       gap: 2px;
+  //       justify-content: center;
+  //       align-content: center;
+  //       flex-wrap: nowrap;
+  //     }
+  //     .card-tag {
+  //       font-size: 10px;
+  //       font-weight: 700;
+  //       letter-spacing: 0.6px;
+  //       text-transform: uppercase;
+  //       padding: 1px 6px;
+  //       border-radius: 4px;
+  //       opacity: 0.9;
+  //       flex-shrink: 0;
+  //     }
+  //     .card-file {
+  //       font-size: 10px;
+  //       color: var(--dm-muted);
+  //       margin-left: auto;
+  //       overflow: hidden;
+  //       text-overflow: ellipsis;
+  //       white-space: nowrap;
+  //       max-width: 120px;
+  //     }
+
+  //     .card-snippet {
+  //       font-family: var(--dm-mono);
+  //       font-size: 10.5px;
+  //       color: var(--dm-muted);
+  //       text-overflow: ellipsis;
+  //       overflow: hidden;
+  //       white-space: preserve nowrap;
+  //       background: var(--dm-bg);
+  //       padding: 6px 3px;
+  //       border-radius: 4px;
+  //       border: 1px solid var(--dm-border);
+  //     }
+
+  //     .card-actions {
+  //       display: flex;
+  //       gap: 1px;
+  //       opacity: 0;
+  //       transition: opacity 0.15s;
+  //     }
+  //     .card:hover .card-actions { opacity: 1; }
+
+  //     .btn {
+  //       font-size: 10px;
+  //       font-family: var(--dm-font);
+  //       padding: 2px 7px;
+  //       border-radius: 4px;
+  //       border: 1px solid var(--dm-border);
+  //       background: var(--dm-hover);
+  //       color: var(--dm-fg);
+  //       cursor: pointer;
+  //       transition: background 0.12s, border-color 0.12s;
+  //     }
+  //     .btn:hover { background: var(--dm-accent); color: var(--dm-btn-fg); border-color: var(--dm-accent); }
+  //     .btn-danger:hover { background: var(--dm-danger); color: #fff; border-color: var(--dm-danger); }
+  //     .btn-jump { font-weight: 600; }
+
+  //     /* ── Empty State ── */
+  //     .empty {
+  //       display: flex;
+  //       flex-direction: column;
+  //       align-items: center;
+  //       justify-content: center;
+  //       gap: 10px;
+  //       padding: 40px 20px;
+  //       color: var(--dm-muted);
+  //       text-align: center;
+  //     }
+  //     .empty-icon { font-size: 40px; opacity: 0.5; }
+  //     .empty-title { font-size: 13px; font-weight: 600; }
+  //     .empty-sub { font-size: 11px; line-height: 1.5; }
+
+  //     /* ── Stats Bar ── */
+  //     .stats-bar {
+  //       display: flex;
+  //       padding: 6px 12px;
+  //       gap: 8px;
+  //       font-size: 10px;
+  //       color: var(--dm-muted);
+  //       border-top: 1px solid var(--dm-border);
+  //       flex-shrink: 0;
+  //     }
+  //     .stats-bar span { display: flex; align-items: center; gap: 3px; }
+  //   </style>
+  // </head>
+  // <body>
+
+  //   <!-- Header -->
+  //   <div class="header">
+  //     <span class="header-logo">🔖</span>
+  //     <span class="header-title">Code Mark</span>
+  //     <span class="header-count" id="count">0</span>
+  //   </div>
+
+  //   <!-- Filter Bar -->
+  //   <div class="filter-bar">
+  //     <input id="search" type="text" placeholder="Search tags, code…" />
+  //     <select id="filter-tag">
+  //       <option value="">All tags</option>
+  //     </select>
+  //   </div>
+
+  //   <!-- Highlight List -->
+  //   <div class="list" id="list">
+  //     <div class="empty">
+  //       <div class="empty-icon">✨</div>
+  //       <div class="empty-title">No highlights yet</div>
+  //       <div class="empty-sub">Select code → right-click<br>→ <strong>Code Mark: Highlight Code</strong></div>
+  //     </div>
+  //   </div>
+
+  //   <!-- Stats Bar -->
+  //   <div class="stats-bar" id="stats-bar" style="display:none">
+  //     <span id="stat-total">0 highlights</span>
+  //     <span>·</span>
+  //     <span id="stat-files">0 files</span>
+  //   </div>
+
+  //   <script nonce="${nonce}">
+  //     const vscode = acquireVsCodeApi();
+  //     let fileHighlightsViewModel = [];
+  //     let searchQuery = '';
+  //     let filterTag = '';
+
+  //     const listEl = document.getElementById('list');
+  //     const countEl = document.getElementById('count');
+  //     const statsBar = document.getElementById('stats-bar');
+  //     const statTotal = document.getElementById('stat-total');
+  //     const statFiles = document.getElementById('stat-files');
+  //     const filterTagEl = document.getElementById('filter-tag');
+  //     const searchEl = document.getElementById('search');
+
+  //     // Receive updates from extension
+  //     window.addEventListener('message', (event) => {
+  //       const msg = event.data;
+  //       if (msg.type === 'update') {
+  //         fileHighlightsViewModel = msg.fileHighlightsViewModel ?? {};
+  //         console.log('fileHighlightsViewModel: ', fileHighlightsViewModel);
+  //         rebuildTagFilter();
+  //         render();
+  //       }
+  //     });
+
+  //     // Search / filter
+  //     searchEl.addEventListener('input', (e) => {
+  //       searchQuery = e.target.value.toLowerCase();
+  //       render();
+  //     });
+  //     filterTagEl.addEventListener('change', (e) => {
+  //       filterTag = e.target.value;
+  //       render();
+  //     });
+
+  //     function rebuildTagFilter() {
+  //       const tags = [...new Set(allHighlights.map(h => h.tag).filter(Boolean))].sort();
+  //       const current = filterTagEl.value;
+  //       filterTagEl.innerHTML = '<option value="">All tags</option>' +
+  //         tags.map(t => \`<option value="\${esc(t)}" \${t === current ? 'selected' : ''}>\${esc(t)}</option>\`).join('');
+  //     }
+
+  //     function filteredHighlights() {
+  //       return allHighlights.filter(h => {
+  //         if (filterTag && h.tag !== filterTag) return false;
+  //         if (searchQuery) {
+  //           const haystack = ((h.tag || '') + ' ' + (h.codeSnippet || '') + ' ' + (h.filePath || '')).toLowerCase();
+  //           if (!haystack.includes(searchQuery)) return false;
+  //         }
+  //         return true;
+  //       });
+  //     }
+
+  //     function render() {
+  //       const items = filteredHighlights();
+  //       countEl.textContent = items.length;
+
+  //       if (items.length === 0) {
+  //         if (allHighlights.length === 0) {
+  //           listEl.innerHTML = \`<div class="empty">
+  //             <div class="empty-icon">✨</div>
+  //             <div class="empty-title">No highlights yet</div>
+  //             <div class="empty-sub">Select code → right-click<br>→ <strong>Code Mark: Highlight Code</strong></div>
+  //           </div>\`;
+  //         } else {
+  //           listEl.innerHTML = \`<div class="empty">
+  //             <div class="empty-icon">🔍</div>
+  //             <div class="empty-title">No results</div>
+  //             <div class="empty-sub">Try a different search or filter.</div>
+  //           </div>\`;
+  //         }
+  //         statsBar.style.display = 'none';
+  //         return;
+  //       }
+
+  //       // Sort: by file then by range
+  //       // const sorted = [...items].sort((a, b) => {
+  //       //   // 1. Sort by file path alphabetically
+  //       //   const fileComparison = a.filePath.localeCompare(b.filePath);
+  //       //   if (fileComparison !== 0) {
+  //       //     return fileComparison;
+  //       //   }
+
+  //       //   // 2. Sort by range (if file paths are identical)
+  //       //   // Compare the starting line first
+  //       //   if (a.range[0].line !== b.range[0].line) {
+  //       //     return a.range[0].line - b.range[0].line;
+  //       //   }
+
+  //       //   // If they are on the exact same line, compare the starting character
+  //       //   return a.range[0].character - b.range[0].character;
+  //       // });
+
+  //       const sortedFilePaths = Object.keys(items).sort((a, b) => {
+  //         // 1. Sort by file path alphabetically
+  //         const fileComparison = a.filePath.localeCompare(b.filePath);
+  //         if (fileComparison !== 0) {
+  //           return fileComparison;
+  //         }
+  //       });
+
+  //       const renderedCards = [];
+  //       for (const filePath of sortedFilePaths) {
+  //         const filePathsHighlights = items[filePath];
+  //         renderedCards.push(...filePathsHighlights.map(h => renderCard(h)));
+  //       }
+
+  //       listEl.innerHTML = renderedCards.join('');
+
+  //       // Stats
+  //       const uniqueFiles = new Set(items.map(h => h.filePath)).size;
+  //       statTotal.textContent = items.length + ' highlight' + (items.length !== 1 ? 's' : '');
+  //       statFiles.textContent = uniqueFiles + ' file' + (uniqueFiles !== 1 ? 's' : '');
+  //       statsBar.style.display = 'flex';
+
+  //       // Bind card events
+  //       listEl.querySelectorAll('.card').forEach(card => {
+  //         const id = card.dataset.id;
+  //         const h = allHighlights.find(x => x.id === id);
+  //         if (!h) return;
+
+  //         card.addEventListener('click', (e) => {
+  //           if (e.target.closest('.card-actions')) return;
+  //           if (e.altKey) {
+  //             vscode.postMessage({ command: 'jumpTo', filePath: h.filePath, snippet: h.codeSnippet, hash: h.codeHash, jumpInSplitEditor: true });
+  //           } else {
+  //             vscode.postMessage({ command: 'jumpTo', filePath: h.filePath, snippet: h.codeSnippet, hash: h.codeHash, jumpInSplitEditor: false });
+  //           }
+  //         });
+
+  //         card.querySelector('.btn-jump')?.addEventListener('click', (e) => {
+  //           e.stopPropagation();
+  //           if (e.altKey) {
+  //             vscode.postMessage({ command: 'jumpTo', filePath: h.filePath, snippet: h.codeSnippet, hash: h.codeHash, jumpInSplitEditor: true });
+  //           } else {
+  //             vscode.postMessage({ command: 'jumpTo', filePath: h.filePath, snippet: h.codeSnippet, hash: h.codeHash, jumpInSplitEditor: false });
+  //           }
+  //         });
+  //         card.querySelector('.btn-tag')?.addEventListener('click', (e) => {
+  //           e.stopPropagation();
+  //           vscode.postMessage({ command: 'editTag', id: h.id });
+  //         });
+  //         card.querySelector('.btn-color')?.addEventListener('click', (e) => {
+  //           e.stopPropagation();
+  //           vscode.postMessage({ command: 'changeColor', id: h.id });
+  //         });
+  //         card.querySelector('.btn-delete')?.addEventListener('click', (e) => {
+  //           e.stopPropagation();
+  //           vscode.postMessage({ command: 'delete', id: h.id });
+  //         });
+  //       });
+  //     }
+
+  //     function renderCard(h) {
+  //       const snippet = esc(h.codeSnippetDisplay.split('\\n').slice(0, 12).join('\\n'));
+  //       const fileName = esc(h.filePath);
+  //       const tagColor = esc(h.color);
+  //       const tagBg = hexToRgba(h.color, 0.18);
+
+  //       return \`<div class="card" data-id="\${esc(h.id)}" style="border: 1px solid \${tagColor};">
+  //         <div class="card-top">
+  //           \${h.tag ? \`<span class="card-tag" style="background:\${tagBg};color:\${tagColor}">\${esc(h.tag)}</span>\` : ''}
+  //           <div class="card-actions">
+  //             <button class="btn btn-jump">↗ Jump</button>
+  //             <button class="btn btn-tag">🏷 Tag</button>
+  //             <button class="btn btn-color">🎨 Color</button>
+  //             <button class="btn btn-danger btn-delete">🗑</button>
+  //           </div>
+  //           <span class="card-file" title="\${fileName}">\${fileName}</span>
+  //         </div>
+  //         <div class="card-snippet">\${snippet}</div>
+  //       </div>\`;
+  //     }
+
+  //     function esc(str) {
+  //       return String(str)
+  //         .replace(/&/g, '&amp;')
+  //         .replace(/</g, '&lt;')
+  //         .replace(/>/g, '&gt;')
+  //         .replace(/"/g, '&quot;')
+  //         .replace(/'/g, '&#039;');
+  //     }
+
+  //     function hexToRgba(hex, alpha) {
+  //       const clean = hex.replace('#', '');
+  //       const r = parseInt(clean.substring(0, 2), 16);
+  //       const g = parseInt(clean.substring(2, 4), 16);
+  //       const b = parseInt(clean.substring(4, 6), 16);
+  //       return \`rgba(\${r},\${g},\${b},\${alpha})\`;
+  //     }
+
+  //     // Notify extension we're ready
+  //     vscode.postMessage({ command: 'ready' });
+  //   </script>
+  // </body>
+  // </html>`;
+  // }
 }
+
 function getNonce() {
   let text = "";
   const possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";

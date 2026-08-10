@@ -419,7 +419,7 @@
     "unicorn/prefer-native-coercion-functions": "warn",
     "unicorn/prefer-number-coercion": "warn",
     "unicorn/prefer-prototype-methods": "warn",
-    "unicorn/prefer-query-selector": "warn",
+    "unicorn/prefer-query-selector": "off",
     "unicorn/prefer-regexp-test": "warn",
     "unicorn/prefer-single-call": "warn",
     "unicorn/prefer-string-replace-all": "warn",

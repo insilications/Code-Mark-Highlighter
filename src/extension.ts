@@ -3,31 +3,15 @@ import { Messenger } from "vscode-messenger";
 
 import { highlightCodeQuick } from "./commands";
 import { ACTIVATED_CONTEXT } from "./constants";
-import { applyHighlightsToEditor, disposeAllDecorations } from "./decorationManager";
-import { jumpToHighlight } from "./highlightNavigator";
+import { disposeAllDecorations } from "./decorationManager";
 import { HighlightRepository } from "./highlightRepository";
-import { getHighlightsForFile, loadHighlights } from "./storage";
+import { loadHighlights } from "./storage";
 import type { HighlightStore } from "./types";
-import { getFuzzyThreshold } from "./utils";
-import {
-  jumpToHighlightNotificationType,
-  refreshNotificationType,
-  SidebarProvider,
-} from "./webView/sidebarProvider";
-import type { IJumpToHighlightParams, onActionData } from "./webView/types";
+import { SidebarProvider } from "./webView/sidebarProvider";
 
 let sidebar: SidebarProvider;
 let highlightRepository: HighlightRepository;
 const messenger = new Messenger();
-
-function getWorkspaceRelativePath(uri: vscode.Uri): string {
-  const folders = vscode.workspace.workspaceFolders;
-  if (folders && folders.length > 0) {
-    return vscode.workspace.asRelativePath(uri, false);
-  }
-
-  return uri.fsPath;
-}
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
   try {
@@ -35,59 +19,37 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
     highlightRepository = HighlightRepository.fromStore(highlightStore);
 
+    // =====================================================================
     // Sidebar Provider
+    // =====================================================================
     sidebar = new SidebarProvider(
       context,
+      messenger,
       highlightRepository,
       // async (action: string, data: unknown): Promise<void> => {
-      async (data: onActionData): Promise<void> => {
-        switch (data.id) {
-          case "jumpTo":
-            await jumpToHighlight(
-              data.filePath,
-              data.snippet,
-              data.codeHash,
-              getFuzzyThreshold(),
-              data.jumpInSplitEditor,
-            );
-            break;
-          // case "editTag":
-          //   // await editTagCmd(context, sidebar, d.id);
-          //   break;
-          // case "changeColor":
-          //   // await changeColorCmd(context, sidebar, d.id);
-          //   break;
-          case "refresh":
-            refreshActiveEditor(context);
-            break;
-        }
-      },
+      // async (data: onActionData): Promise<void> => {
+      //   switch (data.id) {
+      //     case "jumpTo":
+      //       await jumpToHighlight(
+      //         data.filePath,
+      //         data.snippet,
+      //         data.codeHash,
+      //         getFuzzyThreshold(),
+      //         data.jumpInSplitEditor,
+      //       );
+      //       break;
+      //     // case "editTag":
+      //     //   // await editTagCmd(context, sidebar, d.id);
+      //     //   break;
+      //     // case "changeColor":
+      //     //   // await changeColorCmd(context, sidebar, d.id);
+      //     //   break;
+      //     case "refresh":
+      //       refreshActiveEditor(context);
+      //       break;
+      //   }
+      // },
     );
-
-    // =====================================================================
-    // WebView Messaging Listeners
-    // =====================================================================
-    const webView: vscode.WebviewView | undefined = sidebar.webview;
-    if (!webView) {
-      throw new Error("Sidebar webview is not initialized.");
-    }
-    // Register the WebView with the messenger for communication
-    messenger.registerWebviewView(webView);
-    messenger.onNotification(
-      jumpToHighlightNotificationType,
-      async (data: IJumpToHighlightParams): Promise<void> => {
-        await jumpToHighlight(
-          data.filePath,
-          data.snippet,
-          data.codeHash,
-          getFuzzyThreshold(),
-          data.jumpInSplitEditor,
-        );
-      },
-    );
-    messenger.onNotification(refreshNotificationType, (): void => {
-      refreshActiveEditor(context);
-    });
 
     // Debounce timer for reapplying highlights during `vscode.workspace.onDidChangeTextDocument`
     let debounceTimer: NodeJS.Timeout | undefined;
@@ -100,7 +62,6 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       // =====================================================================
       // Commands
       // =====================================================================
-
       // vscode.commands.registerCommand("codemark.highlightCode", () =>
       //   highlightCode(context, sidebar),
       // ),
@@ -125,12 +86,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       // =====================================================================
       // Editor event listeners
       // =====================================================================
-
       // Reapply when a document is opened
-      vscode.workspace.onDidOpenTextDocument((doc) => {
+      vscode.workspace.onDidOpenTextDocument((doc: vscode.TextDocument) => {
         const editor = vscode.window.visibleTextEditors.find((e) => e.document === doc);
         if (editor) {
-          applyForEditor(editor, context);
+          sidebar.applyForEditor(editor, context);
         }
       }),
 
@@ -148,7 +108,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
             clearTimeout(debounceTimer);
           }
           debounceTimer = setTimeout(() => {
-            applyForEditor(editor, context);
+            sidebar.applyForEditor(editor, context);
           }, 500);
         },
       ),
@@ -157,22 +117,22 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       vscode.workspace.onDidSaveTextDocument((doc) => {
         const editor = vscode.window.visibleTextEditors.find((e) => e.document === doc);
         if (editor) {
-          applyForEditor(editor, context);
-          sidebar.refresh();
+          sidebar.applyForEditor(editor, context);
+          sidebar.refreshSidebar();
         }
       }),
 
       // Reapply when switching editors
       vscode.window.onDidChangeActiveTextEditor((editor) => {
         if (editor) {
-          applyForEditor(editor, context);
+          sidebar.applyForEditor(editor, context);
         }
       }),
     );
 
     // Apply highlights to all currently visible editors on startup
     for (const editor of vscode.window.visibleTextEditors) {
-      applyForEditor(editor, context);
+      sidebar.applyForEditor(editor, context);
     }
 
     // Success: Enable the UI elements
@@ -186,19 +146,6 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       `[Code Mark Highlighter] Failed to start. ${error instanceof Error ? error.message : String(error)}`,
     );
     throw new Error("[Code Mark Highlighter] Failed to start.", { cause: error });
-  }
-}
-
-function applyForEditor(editor: vscode.TextEditor, context: vscode.ExtensionContext): void {
-  const filePath = getWorkspaceRelativePath(editor.document.uri);
-  const highlights = getHighlightsForFile(context, filePath);
-  applyHighlightsToEditor(editor, highlights, getFuzzyThreshold());
-}
-
-function refreshActiveEditor(context: vscode.ExtensionContext): void {
-  const editor = vscode.window.activeTextEditor;
-  if (editor) {
-    applyForEditor(editor, context);
   }
 }
 

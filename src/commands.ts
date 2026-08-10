@@ -235,7 +235,7 @@ export function highlightCodeQuick(
   // Reapply all highlights to this editor
   applyHighlightsToEditor2(editor, fileHighlights);
 
-  sidebar.refresh();
+  sidebar.refreshSidebar();
   vscode.window.setStatusBarMessage(`$(bookmark) Code Mark: Highlight added`, 3000);
 }
 

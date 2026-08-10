@@ -10,8 +10,8 @@ export interface IJumpToHighlightParams {
   jumpInSplitEditor: JumpParamsTuple[4];
 }
 
-export type onActionData = ({ id: "jumpTo" } & IJumpToHighlightParams) | { id: "refresh" };
-// | { id: "editTag"; highlightId: string; newTag: string };
-// | { id: "changeColor"; highlightId: string; newColor: string };
+// export type onActionData = ({ id: "jumpTo" } & IJumpToHighlightParams) | { id: "refresh" };
+// // | { id: "editTag"; highlightId: string; newTag: string };
+// // | { id: "changeColor"; highlightId: string; newColor: string };
 
-export type jumpToHighlightTypeParams = IJumpToHighlightParams;
+// export type jumpToHighlightTypeParams = IJumpToHighlightParams;

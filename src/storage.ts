@@ -83,27 +83,15 @@ const WS_STATE_KEY = "codemark.highlights";
 //   return result;
 // }
 
-// export function getWorkspaceRelativePath(uri: vscode.Uri): string | null {
-//   const workspaceFolders: readonly vscode.WorkspaceFolder[] | undefined =
-//     vscode.workspace.workspaceFolders;
+export function getWorkspaceRelativePath(uri: vscode.Uri): string {
+  const workspaceFolders: readonly vscode.WorkspaceFolder[] | undefined =
+    vscode.workspace.workspaceFolders;
+  if (workspaceFolders && workspaceFolders.length > 0) {
+    return vscode.workspace.asRelativePath(uri, false);
+  }
 
-//   const workspaceRoot: string | undefined =
-//     workspaceFolders && workspaceFolders.length > 0 ? workspaceFolders[0]?.uri.fsPath : undefined;
-
-//   if (workspaceRoot !== undefined) {
-//     const rel = vscode.workspace.asRelativePath(uri, false);
-//     return rel;
-//   }
-
-//   return uri.fsPath;
-
-//   // const folders = vscode.workspace.workspaceFolders;
-//   // if (folders && folders.length > 0) {
-//   // const rel = vscode.workspace.asRelativePath(uri, false);
-//   // return rel;
-//   // }
-//   // return uri.fsPath;
-// }
+  return uri.fsPath;
+}
 
 function getStorageFilePath(): string | null {
   const workspaceFolders: readonly vscode.WorkspaceFolder[] | undefined =
