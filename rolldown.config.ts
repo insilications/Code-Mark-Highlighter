@@ -1,3 +1,6 @@
+import * as fs from "node:fs";
+import * as path from "node:path";
+
 import { defineConfig } from "rolldown";
 
 export default defineConfig([
@@ -31,6 +34,46 @@ export default defineConfig([
     // Informs Rolldown this code runs in a browser environment
     platform: "browser",
     tsconfig: "./tsconfig.json",
+    plugins: [
+      // replacePlugin(
+      //   {
+      //     // "/*JS_CONTENT*/": jsContent,
+      //     "/*CSS_CONTENT*/": cssContent,
+      //   },
+      //   {
+      //     preventAssignment: false,
+      //   },
+      // ),
+      {
+        name: "inject-import-map",
+        generateBundle(_, bundle) {
+          // const chunkImportMap = bundle['importmap.json'];
+          // if (chunkImportMap?.type === 'asset') {
+          const htmlContent: string = fs.readFileSync(
+            path.resolve("src/webView/mainWebView.html"),
+            "utf-8",
+          );
+          const jsContent: string = fs.readFileSync(
+            path.resolve("src/webView/mainWebView.js"),
+            "utf-8",
+          );
+          const cssContent: string = fs.readFileSync(
+            path.resolve("src/webView/mainWebView.css"),
+            "utf-8",
+          );
+          //   let html = fs.readFileSync(htmlPath, 'utf-8');
+
+          //   html = html.replace(
+          //     /<script\s+type="importmap"[^>]*>[\s\S]*?</script>/i,
+          //     `<script type="importmap">${chunkImportMap.source}</script>`
+          //   );
+
+          //   fs.writeFileSync(htmlPath, html);
+          //   delete bundle['importmap.json'];
+          // }
+        },
+      },
+    ],
   },
 ]);
 

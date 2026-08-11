@@ -1,39 +1,33 @@
-// src/highlightMatcher.ts
-// Content-based matching: finds where a stored highlight lives in the current document
-// Uses exact hash match first, then fuzzy substring search as fallback.
-
-import * as crypto from "node:crypto";
+import crypto from "node:crypto";
 
 import * as vscode from "vscode";
-
-import type { Highlight } from "./types";
 
 export function hashText(text: string): string {
   return crypto.createHash("sha256").update(text, "utf8").digest("hex");
 }
 
-export function updateHighlightRangesInEditor(
-  editor: vscode.TextEditor,
-  highlights: Highlight[],
-  fuzzyThreshold: number = 0.75,
-): Highlight[] {
-  const updatedHighlights: Highlight[] = [];
-  for (const h of highlights) {
-    const range: vscode.Range | null = findRangeInDocument(
-      editor.document,
-      h.codeSnippet,
-      h.codeHash,
-      fuzzyThreshold,
-    );
-    if (!range) {
-      continue;
-    }
+// export function updateHighlightRangesInEditor(
+//   editor: vscode.TextEditor,
+//   highlights: Highlight[],
+//   fuzzyThreshold: number = 0.75,
+// ): Highlight[] {
+//   const updatedHighlights: Highlight[] = [];
+//   for (const h of highlights) {
+//     const range: vscode.Range | null = findRangeInDocument(
+//       editor.document,
+//       h.codeSnippet,
+//       h.codeHash,
+//       fuzzyThreshold,
+//     );
+//     if (!range) {
+//       continue;
+//     }
 
-    updatedHighlights.push({ ...h, range });
-  }
+//     updatedHighlights.push({ ...h, range });
+//   }
 
-  return updatedHighlights;
-}
+//   return updatedHighlights;
+// }
 
 /**
  * Attempt to find the range in `document` where `snippet` lives. Strategy: 1. Exact text search

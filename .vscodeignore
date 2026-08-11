@@ -6,8 +6,7 @@ src/**
 .gitignore
 **/*.map
 node_modules/**
-build.ps1
 PUBLISHING_GUIDE.md
 rolldown.config.mjs
-test.js
-test.html
+.oxfmtrc.json
+.oxlintrc.jsonc

@@ -103,7 +103,12 @@
         "max": 4
       }
     ],
-    "legibility/max-function-parameters": "warn",
+    "legibility/max-function-parameters": [
+      "warn",
+      {
+        "max": 5
+      }
+    ],
     "legibility/no-complex-ternaries": [
       "warn",
       {

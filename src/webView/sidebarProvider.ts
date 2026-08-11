@@ -46,12 +46,7 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
   ) {
     this.extensionUri = extensionContext.extensionUri;
     // this.mainWebViewScriptUri = vscode.Uri.joinPath(this.extensionUri, "out", "mainWebView.js");
-    this.mainWebViewHtmlUri = vscode.Uri.joinPath(
-      this.extensionUri,
-      "src",
-      "webView",
-      "mainWebView.html",
-    );
+    this.mainWebViewHtmlUri = vscode.Uri.joinPath(this.extensionUri, "out", "mainWebView.html");
   }
 
   resolveWebviewView(
@@ -140,7 +135,7 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
 
   private buildHtmlForWebView(): string {
     const htmlContent: string = fs.readFileSync(this.mainWebViewHtmlUri.fsPath, "utf-8");
-    return htmlContent.replaceAll("NNNN", getNonce());
+    return htmlContent.replaceAll("#NNNN#", getNonce());
   }
 
   // private buildHtmlForWebView2(webview: vscode.Webview): string {

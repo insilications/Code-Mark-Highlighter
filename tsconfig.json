@@ -47,6 +47,6 @@
     "types": ["vscode", "node"]
   },
   "exclude": ["out", "node_modules"],
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "rolldown.config.ts"],
   "typeAcquisition": { "enable": true }
 }
