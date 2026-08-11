@@ -50,12 +50,12 @@
     "@types/vscode": "^1.125.0",
     "eslint": "^10.8.1",
     "eslint-plugin-legibility": "^0.3.0",
-    "eslint-plugin-regexp": "^3.1.1",
+    "eslint-plugin-regexp": "^3.2.0",
     "oxfmt": "^0.63.0",
     "oxlint": "^1.78.0",
     "oxlint-tsgolint": "^7.0.2001",
-    "rolldown": "^1.2.3",
-    "typescript": "^7.1.0-dev.20260810.1"
+    "rolldown": "^1.2.4",
+    "typescript": "^7.1.0-dev.20260812.1"
   },
   "contributes": {
     "commands": [
@@ -117,5 +117,10 @@
   "icon": "resources/devmarks-icon.png",
   "engines": {
     "vscode": "^1.100.0"
-  }
+  },
+  "trustedDependencies": [
+    "core-js-bundle",
+    "esbuild",
+    "rs-module-lexer"
+  ]
 }

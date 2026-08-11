@@ -5,9 +5,9 @@ import { highlightCodeQuick } from "./commands";
 import { ACTIVATED_CONTEXT } from "./constants";
 import { disposeAllDecorations } from "./decorationManager";
 import { HighlightRepository } from "./highlightRepository";
+import { SidebarProvider } from "./sidebarProvider";
 import { loadHighlights } from "./storage";
 import type { HighlightStore } from "./types";
-import { SidebarProvider } from "./sidebarProvider";
 
 let sidebar: SidebarProvider;
 let highlightRepository: HighlightRepository;
@@ -95,23 +95,23 @@ export async function activate(context: vscode.ExtensionContext): Promise<Messen
       }),
 
       // Debounced reapplying highlights on text changes (handles edits above highlights)
-      vscode.workspace.onDidChangeTextDocument(
-        (event: Readonly<vscode.TextDocumentChangeEvent>) => {
-          const editor = vscode.window.visibleTextEditors.find(
-            (e) => e.document === event.document,
-          );
-          if (!editor) {
-            return;
-          }
+      // vscode.workspace.onDidChangeTextDocument(
+      //   (event: Readonly<vscode.TextDocumentChangeEvent>) => {
+      //     const editor = vscode.window.visibleTextEditors.find(
+      //       (e) => e.document === event.document,
+      //     );
+      //     if (!editor) {
+      //       return;
+      //     }
 
-          if (debounceTimer) {
-            clearTimeout(debounceTimer);
-          }
-          debounceTimer = setTimeout(() => {
-            sidebar.applyForEditor(editor, context);
-          }, 500);
-        },
-      ),
+      //     if (debounceTimer) {
+      //       clearTimeout(debounceTimer);
+      //     }
+      //     debounceTimer = setTimeout(() => {
+      //       sidebar.applyForEditor(editor, context);
+      //     }, 500);
+      //   },
+      // ),
 
       // Reapply decorations and refresh the `SidebarProvider` on save (positions may have shifted)
       vscode.workspace.onDidSaveTextDocument((doc) => {
@@ -131,9 +131,9 @@ export async function activate(context: vscode.ExtensionContext): Promise<Messen
     );
 
     // Apply highlights to all currently visible editors on startup
-    for (const editor of vscode.window.visibleTextEditors) {
-      sidebar.applyForEditor(editor, context);
-    }
+    // for (const editor of vscode.window.visibleTextEditors) {
+    //   sidebar.applyForEditor(editor, context);
+    // }
 
     // Success: Enable the UI elements
     await vscode.commands.executeCommand("setContext", ACTIVATED_CONTEXT, true);

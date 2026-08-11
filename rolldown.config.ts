@@ -18,8 +18,7 @@ export default defineConfig([
     platform: "node",
     // Keeps vscode external
     external: ["vscode", "node:fs", "node:path", "node:crypto"],
-    // tsconfig: "./tsconfig.json",
-    tsconfig: true,
+    tsconfig: "./tsconfig.node.json",
   },
 
   // Webview (Browser Environment)
@@ -34,17 +33,13 @@ export default defineConfig([
       sourcemap: true,
       minify: false,
     },
-    // optimization: {
-    //   inlineConst: { mode: "all", pass: 3 },
-    // },
+    optimization: {
+      inlineConst: { mode: "all", pass: 3 },
+    },
     // Informs Rolldown this code runs in a browser environment
     platform: "browser",
     external: ["vscode", "node:fs", "node:path", "node:crypto"],
-    // strictExecutionOrder: true,
-    // external: ["node:fs", "node:path", "node:crypto"],
-    // tsconfig: "./tsconfig.webview.json",
-    // tsconfig: true,
-    // tsconfig: true,
+    tsconfig: "./tsconfig.webview.json",
     // plugins: [
     //   // replacePlugin(
     //   //   {
