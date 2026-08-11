@@ -1,6 +1,3 @@
-import * as fs from "node:fs";
-import * as path from "node:path";
-
 import { defineConfig } from "rolldown";
 
 export default defineConfig([
@@ -14,66 +11,81 @@ export default defineConfig([
       sourcemap: true,
       minify: false,
     },
+    optimization: {
+      inlineConst: { mode: "all", pass: 3 },
+    },
     // Treats node built-ins natively
-    platform: "browser",
+    platform: "node",
     // Keeps vscode external
     external: ["vscode", "node:fs", "node:path", "node:crypto"],
-    tsconfig: "./tsconfig.json",
+    // tsconfig: "./tsconfig.json",
+    tsconfig: true,
   },
 
   // Webview (Browser Environment)
   {
-    input: "src/webView/mainWebView.ts",
+    input: "webview/mainWebView.ts",
+    logLevel: "debug",
     output: {
       dir: "out",
       // Modern browsers natively support ES Modules
       format: "esm",
+      // format: "iife",
       sourcemap: true,
       minify: false,
     },
+    // optimization: {
+    //   inlineConst: { mode: "all", pass: 3 },
+    // },
     // Informs Rolldown this code runs in a browser environment
     platform: "browser",
-    tsconfig: "./tsconfig.json",
-    plugins: [
-      // replacePlugin(
-      //   {
-      //     // "/*JS_CONTENT*/": jsContent,
-      //     "/*CSS_CONTENT*/": cssContent,
-      //   },
-      //   {
-      //     preventAssignment: false,
-      //   },
-      // ),
-      {
-        name: "inject-import-map",
-        generateBundle(_, bundle) {
-          // const chunkImportMap = bundle['importmap.json'];
-          // if (chunkImportMap?.type === 'asset') {
-          const htmlContent: string = fs.readFileSync(
-            path.resolve("src/webView/mainWebView.html"),
-            "utf-8",
-          );
-          // const jsContent: string = fs.readFileSync(
-          //   path.resolve("src/webView/mainWebView.js"),
-          //   "utf-8",
-          // );
-          const cssContent: string = fs.readFileSync(
-            path.resolve("src/webView/mainWebView.css"),
-            "utf-8",
-          );
-          //   let html = fs.readFileSync(htmlPath, 'utf-8');
-
-          //   html = html.replace(
-          //     /<script\s+type="importmap"[^>]*>[\s\S]*?</script>/i,
-          //     `<script type="importmap">${chunkImportMap.source}</script>`
-          //   );
-
-          //   fs.writeFileSync(htmlPath, html);
-          //   delete bundle['importmap.json'];
-          // }
-        },
-      },
-    ],
+    external: ["vscode", "node:fs", "node:path", "node:crypto"],
+    // strictExecutionOrder: true,
+    // external: ["node:fs", "node:path", "node:crypto"],
+    // tsconfig: "./tsconfig.webview.json",
+    // tsconfig: true,
+    // tsconfig: true,
+    // plugins: [
+    //   // replacePlugin(
+    //   //   {
+    //   //     // "/*JS_CONTENT*/": jsContent,
+    //   //     "/*CSS_CONTENT*/": cssContent,
+    //   //   },
+    //   //   {
+    //   //     preventAssignment: false,
+    //   //   },
+    //   // ),
+    //   {
+    //     name: "inject-import-map",
+    //     generateBundle(_, bundle) {
+    //       // const chunkImportMap = bundle['importmap.json'];
+    //       // if (chunkImportMap?.type === 'asset') {
+    //       const htmlContent: string = fs.readFileSync(
+    //         path.resolve("src/webView/mainWebView.html"),
+    //         "utf-8",
+    //       );
+    //       // const jsContent: string = fs.readFileSync(
+    //       //   path.resolve("src/webView/mainWebView.js"),
+    //       //   "utf-8",
+    //       // );
+    //       const cssContent: string = fs.readFileSync(
+    //         path.resolve("src/webView/mainWebView.css"),
+    //         "utf-8",
+    //       );
+    //       const keys: string[] = Object.keys(bundle);
+    //       for (let i: number = 0; i < keys.length; i++) {
+    //         const fileName: string | undefined = keys[i];
+    //         if (fileName !== undefined) {
+    //           const chunk = bundle[fileName];
+    //           if (chunk?.type === "chunk") {
+    //             console.log("chunk: ", chunk);
+    //             console.log("chunk.code: ", chunk.code);
+    //           }
+    //         }
+    //       }
+    //     },
+    //   },
+    // ],
   },
 ]);
 

@@ -69,7 +69,7 @@ export function findRangeInDocument(
   // --- 3. Fuzzy sliding-window search ---
   // Only do this for reasonably sized snippets (avoid O(n^2) on huge files)
   const snippetLen: number = snippet.length;
-  const docLen: number = docText.length;
+  // const docLen: number = docText.length;
 
   if (snippetLen < 10 || snippetLen > 5000) {
     return null;
@@ -77,8 +77,8 @@ export function findRangeInDocument(
 
   // Search in blocks: use line-granularity to find candidate regions
   const snippetLines: string[] = snippet.split("\n");
-  const firstLine: string = snippetLines[0].trim();
-  const lastLine: string = snippetLines[snippetLines.length - 1].trim();
+  const firstLine: string = snippetLines[0]!.trim();
+  // const lastLine: string = snippetLines[snippetLines.length - 1].trim();
 
   if (!firstLine) {
     return null;

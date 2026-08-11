@@ -2,16 +2,16 @@
 import { HOST_EXTENSION } from "vscode-messenger-common";
 import { Messenger } from "vscode-messenger-webview";
 
-import type { FileHighlightsViewModel, HighlightViewModel } from "../types";
+import type { FileHighlightsViewModel, HighlightViewModel } from "../src/types";
 import {
   jumpToHighlightNotificationType,
   updateWebViewNotificationType,
   webViewReadyNotificationType,
-} from "./sidebarProvider";
+} from "../src/sidebarProvider";
 // import { HOST_EXTENSION } from 'vscode-messenger-common';
 
 // This will be run within the WebView itself and cannot access the main VS Code APIs directly.
-(function (): void {
+// (function (): void {
   const escapeMap: Record<string, string> = {
     "&": "&amp;",
     "<": "&lt;",
@@ -423,4 +423,4 @@ import {
 
   //Notify extension we're ready
   messenger.sendNotification(webViewReadyNotificationType, HOST_EXTENSION);
-})();
+// })();

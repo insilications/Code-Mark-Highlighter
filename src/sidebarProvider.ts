@@ -7,13 +7,12 @@ import * as vscode from "vscode";
 import { type Messenger } from "vscode-messenger";
 import { NotificationType, type WebviewIdMessageParticipant } from "vscode-messenger-common";
 
-import { applyHighlightsToEditor2 } from "../decorationManager";
-import { jumpToHighlight } from "../highlightNavigator";
-import type { HighlightRepository } from "../highlightRepository";
-import { getWorkspaceRelativePath } from "../storage";
-import type { FileHighlightsViewModel } from "../types";
-import { getFuzzyThreshold } from "../utils";
-import type { IJumpToHighlightParams } from "../webView/types";
+import { applyHighlightsToEditor2 } from "./decorationManager";
+import { jumpToHighlight } from "./highlightNavigator";
+import type { HighlightRepository } from "./highlightRepository";
+import { getWorkspaceRelativePath } from "./storage";
+import type { FileHighlightsViewModel, IJumpToHighlightParams } from "./types";
+import { getFuzzyThreshold } from "./utils";
 
 // =====================================================================
 // WebView message types — declare once, import on both sides
@@ -119,7 +118,7 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
 
   public applyForEditor(
     editor: vscode.TextEditor,
-    extensionContext: vscode.ExtensionContext,
+    _extensionContext: vscode.ExtensionContext,
   ): void {
     const filePath: string = getWorkspaceRelativePath(editor.document.uri);
     // oxlint-disable-next-line typescript/no-non-null-assertion

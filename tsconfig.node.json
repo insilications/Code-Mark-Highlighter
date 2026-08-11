@@ -1,0 +1,10 @@
+{
+  "extends": "./tsconfig.shared.json",
+  "compilerOptions": {
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.node.tsbuildinfo",
+    "types": ["vscode", "node"]
+  },
+  "exclude": ["node_modules"],
+  "include": ["./src/**/*", "./rolldown.config.ts"],
+  "typeAcquisition": { "enable": true }
+}

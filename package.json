@@ -24,7 +24,7 @@
   "type": "module",
   "main": "./out/extension.js",
   "scripts": {
-    "check": "tsc --noEmit",
+    "check": "tsc --build --verbose",
     "compile": "rolldown -c",
     "fmt": "oxfmt",
     "fmt:check": "oxfmt --check",

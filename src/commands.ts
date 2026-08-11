@@ -9,7 +9,7 @@ import * as vscode from "vscode";
 import { applyHighlightsToEditor2 } from "./decorationManager";
 import { hashText } from "./highlightMatcher";
 import type { HighlightRepository } from "./highlightRepository";
-import { SidebarProvider } from "./webView/sidebarProvider";
+import { SidebarProvider } from "./sidebarProvider";
 
 // function getFuzzyThreshold(): number {
 //   return vscode.workspace.getConfiguration("codemark").get<number>("fuzzyMatchThreshold", 0.75);

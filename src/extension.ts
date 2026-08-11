@@ -7,7 +7,7 @@ import { disposeAllDecorations } from "./decorationManager";
 import { HighlightRepository } from "./highlightRepository";
 import { loadHighlights } from "./storage";
 import type { HighlightStore } from "./types";
-import { SidebarProvider } from "./webView/sidebarProvider";
+import { SidebarProvider } from "./sidebarProvider";
 
 let sidebar: SidebarProvider;
 let highlightRepository: HighlightRepository;
