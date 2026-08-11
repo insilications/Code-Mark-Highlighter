@@ -53,10 +53,10 @@ export default defineConfig([
             path.resolve("src/webView/mainWebView.html"),
             "utf-8",
           );
-          const jsContent: string = fs.readFileSync(
-            path.resolve("src/webView/mainWebView.js"),
-            "utf-8",
-          );
+          // const jsContent: string = fs.readFileSync(
+          //   path.resolve("src/webView/mainWebView.js"),
+          //   "utf-8",
+          // );
           const cssContent: string = fs.readFileSync(
             path.resolve("src/webView/mainWebView.css"),
             "utf-8",
