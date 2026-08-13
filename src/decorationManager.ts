@@ -41,9 +41,9 @@ export function applyHighlightsToEditor2(
     editor.setDecorations(decType, []);
   }
 
-  if (highlights.length === 0) {
-    return;
-  }
+  // if (highlights.length === 0) {
+  //   return;
+  // }
 
   // Group by color
   const byColor = new Map<string, vscode.DecorationOptions[]>();

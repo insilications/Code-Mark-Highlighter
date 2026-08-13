@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { Messenger } from "vscode-messenger";
+import { Messenger, type MessengerDiagnostic } from "vscode-messenger";
 
 import { highlightCodeQuick } from "./commands";
 import { ACTIVATED_CONTEXT } from "./constants";
@@ -13,7 +13,7 @@ let sidebar: SidebarProvider;
 let highlightRepository: HighlightRepository;
 const messenger = new Messenger();
 
-export async function activate(context: vscode.ExtensionContext): Promise<void> {
+export async function activate(context: vscode.ExtensionContext): Promise<MessengerDiagnostic> {
   try {
     const highlightStore: HighlightStore = loadHighlights(context);
 
@@ -65,7 +65,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       // vscode.commands.registerCommand("codemark.highlightCode", () =>
       //   highlightCode(context, sidebar),
       // ),
-      vscode.commands.registerCommand("codemark.highlightCodeQuick", () => {
+      vscode.commands.registerCommand("codemark.highlightCodeQuick", (): void => {
         highlightCodeQuick(sidebar);
       }),
       // vscode.commands.registerCommand("codemark.removeHighlight", () =>
@@ -73,7 +73,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       // ),
       // vscode.commands.registerCommand("codemark.editTag", () => editTagCmd(context, sidebar)),
       // vscode.commands.registerCommand("codemark.changeColor", () => changeColorCmd(context, sidebar)),
-      vscode.commands.registerCommand("codemark.showPanel", () => {
+      vscode.commands.registerCommand("codemark.showPanel", (): void => {
         sidebar.reveal();
         vscode.commands.executeCommand("codemark.highlightsPanel.focus");
       }),
@@ -87,9 +87,15 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       // Editor event listeners
       // =====================================================================
       // Reapply when a document is opened
-      vscode.workspace.onDidOpenTextDocument((doc: vscode.TextDocument) => {
-        const editor = vscode.window.visibleTextEditors.find((e) => e.document === doc);
+      vscode.workspace.onDidOpenTextDocument((doc: vscode.TextDocument): void => {
+        console.log(`[Code Mark Highlighter] Document opened: ${doc.fileName}`);
+        const editor: vscode.TextEditor | undefined = vscode.window.visibleTextEditors.find(
+          (e: vscode.TextEditor): boolean => e.document === doc,
+        );
         if (editor) {
+          console.log(
+            `[Code Mark Highlighter] Document opened: ${doc.fileName}. Reapplying highlights.`,
+          );
           sidebar.applyForEditor(editor, context);
         }
       }),
@@ -114,17 +120,28 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       // ),
 
       // Reapply decorations and refresh the `SidebarProvider` on save (positions may have shifted)
-      vscode.workspace.onDidSaveTextDocument((doc) => {
-        const editor = vscode.window.visibleTextEditors.find((e) => e.document === doc);
+      vscode.workspace.onDidSaveTextDocument((doc: vscode.TextDocument): void => {
+        console.log(`[Code Mark Highlighter] Document saved: ${doc.fileName}`);
+        const editor: vscode.TextEditor | undefined = vscode.window.visibleTextEditors.find(
+          (e: vscode.TextEditor): boolean => e.document === doc,
+        );
         if (editor) {
+          console.log(
+            `[Code Mark Highlighter] Document saved: ${doc.fileName}. Reapplying highlights.`,
+          );
           sidebar.applyForEditor(editor, context);
           sidebar.refreshSidebar();
         }
       }),
 
       // Reapply when switching editors
-      vscode.window.onDidChangeActiveTextEditor((editor) => {
+      vscode.window.onDidChangeActiveTextEditor((editor: vscode.TextEditor | undefined): void => {
+        console.log("[Code Mark Highlighter] Active editor changed: ", editor?.document.fileName);
         if (editor) {
+          console.log(
+            "[Code Mark Highlighter] Active editor changed, trying to reapply highlights for: ",
+            editor.document.fileName,
+          );
           sidebar.applyForEditor(editor, context);
         }
       }),
@@ -137,8 +154,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
     // Success: Enable the UI elements
     await vscode.commands.executeCommand("setContext", ACTIVATED_CONTEXT, true);
-    console.log("Code Mark Highlighter extension activated ✓");
-    // return messenger.diagnosticApi({ withParameterData: true, withResponseData: true });
+    console.log("[Code Mark Highlighter] activated ✓");
+    return messenger.diagnosticApi({ withParameterData: true, withResponseData: true });
   } catch (err) {
     vscode.commands.executeCommand("setContext", ACTIVATED_CONTEXT, false);
 

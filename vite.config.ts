@@ -54,19 +54,7 @@ function inlineWebviewPlugin(): Plugin {
     apply: "build",
     enforce: "post",
 
-    async generateBundle(_options: NormalizedOutputOptions, bundle: OutputBundle) {
-      const keys: string[] = Object.keys(bundle);
-      for (let i: number = 0; i < keys.length; i++) {
-        const fileName: string | undefined = keys[i];
-        if (fileName !== undefined) {
-          const chunk = bundle[fileName];
-          if (chunk?.type === "chunk") {
-            console.log("chunk: ", chunk);
-          } else {
-            console.log("asset: ", chunk);
-          }
-        }
-      }
+    async generateBundle(_options: NormalizedOutputOptions, bundle: OutputBundle): Promise<void> {
       // oxlint-disable-next-line unicorn/no-array-callback-reference
       const entryChunk: OutputChunk | undefined = Object.values(bundle).find(isMainWebViewEntry);
 
@@ -81,26 +69,24 @@ function inlineWebviewPlugin(): Plugin {
        * immediately below then reports a meaningful build error.
        */
       const cssFileNames: string[] = [...(entryChunk.viteMetadata?.importedCss ?? [])];
-
       if (cssFileNames.length === 0) {
         this.error('No CSS was emitted for the "mainWebView" entry chunk.');
       }
 
       const cssParts: string[] = [];
-
       for (const cssFileName of cssFileNames) {
         const output: OutputAsset | OutputChunk | undefined = bundle[cssFileName];
         if (output?.type === "asset") {
           cssParts.push(assetSourceToString(output.source));
 
-          // Prevent this CSS asset from being written to out/.
+          // Prevent this CSS asset from being written to `out/`.
           delete bundle[cssFileName];
         } else {
           this.error(`Could not find emitted CSS asset: ${cssFileName}`);
         }
       }
 
-      let javascript: string = entryChunk.code;
+      let javascript: string = `${entryChunk.code}\n//# sourceURL=${entryChunk.fileName}`;
       let css: string = cssParts.join("\n");
 
       /*
@@ -120,7 +106,7 @@ function inlineWebviewPlugin(): Plugin {
        */
       this.addWatchFile(webviewHtmlPath);
 
-      let html = await readFile(webviewHtmlPath, "utf8");
+      let html: string = await readFile(webviewHtmlPath, "utf8");
 
       html = replaceExactlyOnce(html, CSS_PLACEHOLDER, css);
       html = replaceExactlyOnce(html, JS_PLACEHOLDER, javascript);
@@ -135,8 +121,8 @@ function inlineWebviewPlugin(): Plugin {
 }
 
 export default defineConfig(({ mode }) => {
-  const isExtension = mode === "extension";
-  const isWebview = mode === "webview";
+  const isExtension: boolean = mode === "extension";
+  const isWebview: boolean = mode === "webview";
 
   if (!isExtension && !isWebview) {
     throw new Error(`Unknown build mode "${mode}". Expected "extension" or "webview".`);
@@ -164,33 +150,20 @@ export default defineConfig(({ mode }) => {
        * Keep an external source map for the extension, but embed the webview
        * source map because mainWebView.js itself won't be emitted.
        */
-      // sourcemap: isExtension ? true : "inline",
       sourcemap: true,
+      // sourcemap: isExtension ? true : "inline",
 
       minify: false,
       target: "esnext",
       modulePreload: false,
 
       rolldownOptions: {
-        // preserveEntrySignatures: isExtension ? "strict" : false,
-        preserveEntrySignatures: "strict",
+        preserveEntrySignatures: isExtension ? "strict" : false,
         platform: isExtension ? "node" : "browser",
-
         external: isExtension ? extensionExternal : [],
-
         tsconfig: isExtension ? "./tsconfig.node.json" : "./tsconfig.webview.json",
-
-        // optimization: {
-        //   inlineConst: {
-        //     mode: "all",
-        //     pass: 3,
-        //   },
-        // },
-
         output: {
           format: "esm",
-          // format: isExtension ? "esm" : "iife",
-
           entryFileNames: "[name].js",
 
           /*

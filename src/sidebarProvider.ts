@@ -17,7 +17,7 @@ import { applyHighlightsToEditor2 } from "./decorationManager";
 import { jumpToHighlight } from "./highlightNavigator";
 import type { HighlightRepository } from "./highlightRepository";
 import { getWorkspaceRelativePath } from "./storage";
-import type { FileHighlightsViewModel, IJumpToHighlightParams } from "./types";
+import type { FileHighlightsViewModel, Highlight, IJumpToHighlightParams } from "./types";
 import { getFuzzyThreshold } from "./utils";
 
 export class SidebarProvider implements vscode.WebviewViewProvider {
@@ -111,8 +111,11 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
     _extensionContext: vscode.ExtensionContext,
   ): void {
     const filePath: string = getWorkspaceRelativePath(editor.document.uri);
-    // oxlint-disable-next-line typescript/no-non-null-assertion
-    applyHighlightsToEditor2(editor, this.highlightRepository.getHighlights(filePath)!);
+    const highlights: readonly Highlight[] | undefined =
+      this.highlightRepository.getHighlights(filePath);
+    if (highlights && highlights.length > 0) {
+      applyHighlightsToEditor2(editor, highlights);
+    }
   }
 
   public refreshActiveEditor(extensionContext: vscode.ExtensionContext): void {
