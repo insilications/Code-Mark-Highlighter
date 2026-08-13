@@ -7,6 +7,7 @@ src/**
 **/*.map
 node_modules/**
 PUBLISHING_GUIDE.md
-rolldown.config.mjs
+rolldown.config.js
+vite.config.ts
 .oxfmtrc.json
 .oxlintrc.jsonc
