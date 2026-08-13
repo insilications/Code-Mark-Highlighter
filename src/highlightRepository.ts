@@ -99,15 +99,21 @@ export class HighlightRepository {
   /**
    * Adds one Highlight.
    *
-   * Existing file: - binary-search insertion point; - splice into its already-sorted array; -
-   * filepath cache remains valid.
+   * For existing file:
+   * - binary-search insertion point.
+   * - splice into its already-sorted array.
+   * - filepath cache remains valid.
+   * - Returns the resulting array index or the position where the highlight was inserted.
    *
-   * New file: - create the bucket; - invalidate the filepath cache because the set of keys changed.
+   * New file:
+   * - create the bucket.
+   * - invalidate the filepath cache because the set of keys changed.
+   * - Returns 0 because the new highlight is the first and only entry in its array.
    *
    * No global filepath sorting occurs here.
    */
   addHighlight(filePath: string, highlight: Highlight): number {
-    const highlights = this.fileHighlights.get(filePath);
+    const highlights: Highlight[] | undefined = this.fileHighlights.get(filePath);
 
     if (highlights !== undefined) {
       return insertHighlightSorted(highlights, highlight);

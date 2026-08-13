@@ -12,8 +12,17 @@
     ".github/"
   ],
   "jsdoc": {
+    "addDefaultToDescription": true,
+    "bracketSpacing": false,
+    "capitalizeDescriptions": true,
+    "commentLineStrategy": "singleLine",
+    "descriptionTag": false,
+    "descriptionWithDot": false,
+    "keepUnparsableExampleIndent": false,
+    "lineWrappingStyle": "balance",
     "preferCodeFences": true,
-    "separateReturnsFromParam": true
+    "separateReturnsFromParam": true,
+    "separateTagGroups": false
   },
   "jsxBracketSameLine": false,
   "objectWrap": "preserve",

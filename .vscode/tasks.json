@@ -3,14 +3,14 @@
   "tasks": [
     {
       "type": "shell",
-      "command": "npm run compile",
+      "command": "bun run build",
       "group": {
         "kind": "build",
         "isDefault": true
       },
       "problemMatcher": [],
-      "label": "npm: compile",
-      "detail": "Runs the compile script via shell execution",
+      "label": "bun: build",
+      "detail": "Runs the build script via shell execution",
       "presentation": {
         "reveal": "silent",
         "panel": "shared"

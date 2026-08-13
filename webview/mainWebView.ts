@@ -1,16 +1,16 @@
 // oxlint-disable legibility/no-quadratic-patterns max-depth legibility/max-control-flow-depth
 import { HOST_EXTENSION } from "vscode-messenger-common";
-import { Messenger } from "vscode-messenger-webview";
+import type { VsCodeApi } from "vscode-messenger-webview";
+import { acquireVsCodeApi, Messenger } from "vscode-messenger-webview";
 
 import {
   jumpToHighlightNotificationType,
   updateWebViewNotificationType,
   webViewReadyNotificationType,
-} from "../src/sidebarProvider";
+} from "../src/constants";
 import type { FileHighlightsViewModel, HighlightViewModel } from "../src/types";
 
 import "./mainWebView.css";
-// import { HOST_EXTENSION } from 'vscode-messenger-common';
 
 // This will be run within the WebView itself and cannot access the main VS Code APIs directly.
 // (function (): void {
@@ -26,16 +26,9 @@ const escapeMap: Record<string, string> = {
 const escapeRegex = /[&<>"']/g;
 
 let fileHighlightsViewModel: FileHighlightsViewModel[] = [];
+const vscode: VsCodeApi = acquireVsCodeApi();
 // acquireVsCodeApi() is called automatically
-const messenger = new Messenger();
-
-messenger.onNotification(updateWebViewNotificationType, (params): void => {
-  fileHighlightsViewModel = params;
-  console.log("fileHighlightsViewModel: ", fileHighlightsViewModel);
-  rebuildTagFilter();
-  render();
-});
-messenger.start();
+const messenger = new Messenger(vscode);
 
 let searchNeedle: string = "";
 let tagNeedle: string = "";
@@ -56,17 +49,6 @@ const filterTagEl: HTMLSelectElement = document.getElementById("filter-tag")! as
 
 // oxlint-disable-next-line typescript/no-non-null-assertion typescript/no-unsafe-type-assertion
 const searchEl: HTMLInputElement = document.getElementById("search")! as HTMLInputElement;
-
-// // Receive updates from extension
-// window.addEventListener('message', (event) => {
-//   const msg = event.data;
-//   if (msg.type === 'update') {
-//     fileHighlightsViewModel = msg.fileHighlightsViewModel ?? {};
-//     console.log('fileHighlightsViewModel: ', fileHighlightsViewModel);
-//     rebuildTagFilter();
-//     render();
-//   }
-// });
 
 // // Search / filter
 searchEl.addEventListener("input", (e: Event): void => {
@@ -103,8 +85,8 @@ function rebuildTagFilter(): void {
  * Filters file highlights by an optional tag query and/or text search query.
  *
  * Matching is case-insensitive and substring-based. The function expects the pre-normalized
- * lowercase `filePathSearch`, `tagSearch`, and `codeSnippetDisplaySearch` properties to be kept in
- * sync with their corresponding display values.
+ * lowercase `filePathSearch`, `tagSearch`, and `codeSnippetDisplaySearch` properties to be kept
+ * in sync with their corresponding display values.
  *
  * A highlight is included when both of the following conditions are satisfied:
  *
@@ -114,15 +96,16 @@ function rebuildTagFilter(): void {
  *    `codeSnippetDisplaySearch` must contain the normalized search query. If `searchQuery` is
  *    empty, no text filtering is applied.
  *
- * Consequently, when both queries are provided, they are combined using AND semantics: a highlight
- * must satisfy the tag filter and must also satisfy either the file-path or code-snippet search.
+ * Consequently, when both queries are provided, they are combined using AND semantics: a
+ * highlight must satisfy the tag filter and must also satisfy either the file-path or
+ * code-snippet search.
  *
  * Files for which no highlights satisfy the active filters are omitted from the returned array.
  *
- * If neither query is provided, the original `fileHighlightsViewModel` array is returned unchanged.
- * The implementation may also reuse original file and highlight objects where filtering does not
- * require constructing a reduced highlights array; callers therefore should not assume that the
- * returned data is a deep copy.
+ * If neither query is provided, the original `fileHighlightsViewModel` array is returned
+ * unchanged. The implementation may also reuse original file and highlight objects where
+ * filtering does not require constructing a reduced highlights array; callers therefore should
+ * not assume that the returned data is a deep copy.
  *
  * The function does not mutate `fileHighlightsViewModel` or any contained view model.
  *
@@ -411,6 +394,27 @@ function hexToRgba(hex: string, alpha: number): string {
   const b: number = parseInt(clean.slice(4, 6), 16);
   return `rgba(${r},${g},${b},${alpha})`;
 }
+
+messenger.onNotification(
+  updateWebViewNotificationType,
+  (params: FileHighlightsViewModel[]): void => {
+    fileHighlightsViewModel = params;
+    console.log("fileHighlightsViewModel: ", fileHighlightsViewModel);
+    rebuildTagFilter();
+    render();
+  },
+);
+messenger.start();
+// // Receive updates from extension
+// window.addEventListener('message', (event) => {
+//   const msg = event.data;
+//   if (msg.type === 'update') {
+//     fileHighlightsViewModel = msg.fileHighlightsViewModel ?? {};
+//     console.log('fileHighlightsViewModel: ', fileHighlightsViewModel);
+//     rebuildTagFilter();
+//     render();
+//   }
+// });
 
 //Notify extension we're ready
 messenger.sendNotification(webViewReadyNotificationType, HOST_EXTENSION);

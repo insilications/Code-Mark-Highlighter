@@ -4,9 +4,11 @@ import { fileURLToPath } from "node:url";
 import type { NormalizedOutputOptions, OutputAsset, OutputBundle, OutputChunk } from "rolldown";
 import { defineConfig, type Plugin } from "vite";
 
-const external: (string | RegExp)[] = ["vscode", /^node:/];
+const extensionExternal: (string | RegExp)[] = ["vscode", /^node:/];
 
-const webviewHtmlPath = fileURLToPath(new URL("./webview/mainWebView.html", import.meta.url));
+const webviewHtmlPath: string = fileURLToPath(
+  new URL("./webview/mainWebView.html", import.meta.url),
+);
 
 const JS_PLACEHOLDER = "/*JS_CONTENT*/";
 const CSS_PLACEHOLDER = "/*CSS_CONTENT*/";
@@ -41,11 +43,6 @@ function isMainWebViewEntry(output: OutputAsset | OutputChunk): output is Output
   return output.type === "chunk" && output.isEntry && output.name === "mainWebView";
 }
 
-/** Type guard for output assets. */
-function isOutputAsset(output: OutputAsset | OutputChunk | undefined): output is OutputAsset {
-  return output?.type === "asset";
-}
-
 /**
  * Replaces the JS/CSS placeholders in the webview HTML template with the generated webview
  * JavaScript and CSS, then suppresses the standalone JS/CSS outputs.
@@ -58,6 +55,18 @@ function inlineWebviewPlugin(): Plugin {
     enforce: "post",
 
     async generateBundle(_options: NormalizedOutputOptions, bundle: OutputBundle) {
+      const keys: string[] = Object.keys(bundle);
+      for (let i: number = 0; i < keys.length; i++) {
+        const fileName: string | undefined = keys[i];
+        if (fileName !== undefined) {
+          const chunk = bundle[fileName];
+          if (chunk?.type === "chunk") {
+            console.log("chunk: ", chunk);
+          } else {
+            console.log("asset: ", chunk);
+          }
+        }
+      }
       // oxlint-disable-next-line unicorn/no-array-callback-reference
       const entryChunk: OutputChunk | undefined = Object.values(bundle).find(isMainWebViewEntry);
 
@@ -81,15 +90,14 @@ function inlineWebviewPlugin(): Plugin {
 
       for (const cssFileName of cssFileNames) {
         const output: OutputAsset | OutputChunk | undefined = bundle[cssFileName];
+        if (output?.type === "asset") {
+          cssParts.push(assetSourceToString(output.source));
 
-        if (!isOutputAsset(output)) {
+          // Prevent this CSS asset from being written to out/.
+          delete bundle[cssFileName];
+        } else {
           this.error(`Could not find emitted CSS asset: ${cssFileName}`);
         }
-
-        cssParts.push(assetSourceToString(output.source));
-
-        // Prevent this CSS asset from being written to out/.
-        delete bundle[cssFileName];
       }
 
       let javascript: string = entryChunk.code;
@@ -156,28 +164,32 @@ export default defineConfig(({ mode }) => {
        * Keep an external source map for the extension, but embed the webview
        * source map because mainWebView.js itself won't be emitted.
        */
-      sourcemap: isExtension ? true : "inline",
+      // sourcemap: isExtension ? true : "inline",
+      sourcemap: true,
 
       minify: false,
       target: "esnext",
       modulePreload: false,
 
       rolldownOptions: {
+        // preserveEntrySignatures: isExtension ? "strict" : false,
+        preserveEntrySignatures: "strict",
         platform: isExtension ? "node" : "browser",
 
-        external,
+        external: isExtension ? extensionExternal : [],
 
         tsconfig: isExtension ? "./tsconfig.node.json" : "./tsconfig.webview.json",
 
-        optimization: {
-          inlineConst: {
-            mode: "all",
-            pass: 3,
-          },
-        },
+        // optimization: {
+        //   inlineConst: {
+        //     mode: "all",
+        //     pass: 3,
+        //   },
+        // },
 
         output: {
           format: "esm",
+          // format: isExtension ? "esm" : "iife",
 
           entryFileNames: "[name].js",
 

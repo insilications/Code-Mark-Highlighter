@@ -5,30 +5,20 @@ import * as fs from "node:fs";
 
 import * as vscode from "vscode";
 import { type Messenger } from "vscode-messenger";
-import { type NotificationType, type WebviewIdMessageParticipant } from "vscode-messenger-common";
+import { type WebviewIdMessageParticipant } from "vscode-messenger-common";
 
+import {
+  jumpToHighlightNotificationType,
+  refreshActiveEditorNotificationType,
+  updateWebViewNotificationType,
+  webViewReadyNotificationType,
+} from "./constants";
 import { applyHighlightsToEditor2 } from "./decorationManager";
 import { jumpToHighlight } from "./highlightNavigator";
 import type { HighlightRepository } from "./highlightRepository";
 import { getWorkspaceRelativePath } from "./storage";
 import type { FileHighlightsViewModel, IJumpToHighlightParams } from "./types";
 import { getFuzzyThreshold } from "./utils";
-
-// =====================================================================
-// WebView message types — declare once, import on both sides
-// =====================================================================
-export const jumpToHighlightNotificationType: NotificationType<IJumpToHighlightParams> = {
-  method: "jumpToHighlight",
-};
-export const webViewReadyNotificationType: NotificationType<void> = {
-  method: "webViewReady",
-};
-export const refreshActiveEditorNotificationType: NotificationType<void> = {
-  method: "refreshActiveEditor",
-};
-export const updateWebViewNotificationType: NotificationType<FileHighlightsViewModel[]> = {
-  method: "updateWebView",
-};
 
 export class SidebarProvider implements vscode.WebviewViewProvider {
   public static readonly VIEW_ID = "codemark.highlightsPanel";

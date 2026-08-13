@@ -1,4 +1,34 @@
-import type { ColorOption } from "./types";
+import type { NotificationType } from "vscode-messenger-common";
+
+import type { ColorOption, FileHighlightsViewModel, IJumpToHighlightParams } from "./types";
+
+// =====================================================================
+// WebView message types — declare once, import on both sides
+// =====================================================================
+export const jumpToHighlightNotificationType: NotificationType<IJumpToHighlightParams> = {
+  method: "jumpToHighlight",
+};
+export const webViewReadyNotificationType: NotificationType<void> = {
+  method: "webViewReady",
+};
+export const refreshActiveEditorNotificationType: NotificationType<void> = {
+  method: "refreshActiveEditor",
+};
+export const updateWebViewNotificationType: NotificationType<FileHighlightsViewModel[]> = {
+  method: "updateWebView",
+};
+
+/**
+ * Current persistence-format version.
+ *
+ * Increment this whenever the on-disk representation changes in a way that requires migration.
+ * Runtime-only changes do not necessarily require a new storage version.
+ */
+export const HIGHLIGHT_STORE_VERSION = 1;
+
+export const WS_STATE_KEY = "codemark.highlights";
+export const EXTENSION_KEY = "codemark";
+export const ACTIVATED_CONTEXT = `${EXTENSION_KEY}:isActivated`;
 
 export const PRESET_COLORS: ColorOption[] = [
   { label: "Golden Yellow", emoji: "🟡", hex: "#FFD700" },
@@ -23,15 +53,3 @@ export const DEFAULT_TAGS: string[] = [
   "Question",
   "Note",
 ];
-
-/**
- * Current persistence-format version.
- *
- * Increment this whenever the on-disk representation changes in a way that requires migration.
- * Runtime-only changes do not necessarily require a new storage version.
- */
-export const HIGHLIGHT_STORE_VERSION = 1;
-
-export const WS_STATE_KEY = "codemark.highlights";
-export const EXTENSION_KEY = "codemark";
-export const ACTIVATED_CONTEXT = `${EXTENSION_KEY}:isActivated`;

@@ -1,7 +1,7 @@
 {
   "name": "code-mark-highlighter",
   "displayName": "Code Mark Highlighter",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Highlight code blocks with custom colors and tags. Highlights persist based on code content — not line numbers — and survive edits and restarts.",
   "categories": [
     "Other",
@@ -29,17 +29,14 @@
     "build:webview": "vite build --mode webview",
     "check": "tsc --build --verbose",
     "clean": "rm -rf out",
-    "compile": "rolldown -c",
     "fmt": "oxfmt",
     "fmt:check": "oxfmt --check",
     "lint": "oxlint --format=agent",
     "lint:fix": "oxlint --fix",
     "lint:full": "oxlint",
     "lint:sarif": "oxlint --format=sarif",
-    "package": "rolldown -c",
     "test-compile": "tsc -p ./",
-    "vscode:prepublish": "bun run package",
-    "watch": "rolldown -c -w"
+    "vscode:prepublish": "bun run build"
   },
   "dependencies": {
     "@vscode-elements/elements": "file:../elements",
@@ -67,14 +64,12 @@
       {
         "category": "Code Mark",
         "command": "codemark.highlightCodeQuick",
-        "title": "Code Mark: Quick Highlight Code",
-        "when": "codemark:isActivated"
+        "title": "Code Mark: Quick Highlight Code"
       },
       {
         "category": "Code Mark",
         "command": "codemark.showPanel",
-        "title": "Code Mark: Show Highlights Panel",
-        "when": "codemark:isActivated"
+        "title": "Code Mark: Show Highlights Panel"
       }
     ],
     "configuration": {
@@ -101,8 +96,7 @@
           "icon": "resources/devmarks.svg",
           "id": "codemark.highlightsPanel",
           "name": "Highlights",
-          "type": "webview",
-          "when": "codemark:isActivated"
+          "type": "webview"
         }
       ]
     },
@@ -121,7 +115,7 @@
   ],
   "icon": "resources/devmarks-icon.png",
   "engines": {
-    "vscode": "^1.100.0"
+    "vscode": "^1.125.0"
   },
   "trustedDependencies": [
     "core-js-bundle",

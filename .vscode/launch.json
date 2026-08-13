@@ -15,7 +15,7 @@
       "sourceMaps": true,
       "smartStep": true,
       "skipFiles": ["<node_internals>/**", "/usr/share/code-insiders/**"],
-      "preLaunchTask": "npm: compile"
+      "preLaunchTask": "bun: build"
     }
   ]
 }

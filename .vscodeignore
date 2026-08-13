@@ -1,13 +1,13 @@
+*.code-workspace
 .vscode/**
 .vscode-test/**
 **/*.ts
 !out/**
 src/**
+webview/**
 .gitignore
-**/*.map
 node_modules/**
 PUBLISHING_GUIDE.md
-rolldown.config.js
 vite.config.ts
 .oxfmtrc.json
 .oxlintrc.jsonc

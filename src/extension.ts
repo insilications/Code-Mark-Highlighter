@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { Messenger, type MessengerDiagnostic } from "vscode-messenger";
+import { Messenger } from "vscode-messenger";
 
 import { highlightCodeQuick } from "./commands";
 import { ACTIVATED_CONTEXT } from "./constants";
@@ -13,7 +13,7 @@ let sidebar: SidebarProvider;
 let highlightRepository: HighlightRepository;
 const messenger = new Messenger();
 
-export async function activate(context: vscode.ExtensionContext): Promise<MessengerDiagnostic> {
+export async function activate(context: vscode.ExtensionContext): Promise<void> {
   try {
     const highlightStore: HighlightStore = loadHighlights(context);
 
@@ -138,7 +138,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<Messen
     // Success: Enable the UI elements
     await vscode.commands.executeCommand("setContext", ACTIVATED_CONTEXT, true);
     console.log("Code Mark Highlighter extension activated ✓");
-    return messenger.diagnosticApi({ withParameterData: true, withResponseData: true });
+    // return messenger.diagnosticApi({ withParameterData: true, withResponseData: true });
   } catch (err) {
     vscode.commands.executeCommand("setContext", ACTIVATED_CONTEXT, false);
 
