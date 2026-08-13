@@ -37,7 +37,9 @@ export function deserializeRange(serialized: RangeSerialized): vscode.Range {
  *
  * Properties are copied explicitly rather than using:
  *
- *     { ...highlight, range: ... }
+ * ```
+ * { ...highlight, range: ... }
+ * ```
  *
  * That is intentional. The persistence schema should be explicit and should not accidentally start
  * storing a future runtime-only property merely because somebody added it to Highlight.

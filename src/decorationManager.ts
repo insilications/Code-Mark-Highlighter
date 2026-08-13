@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 
-import { Highlight } from "./types";
+import { type Highlight } from "./types";
 
 // Cache of decoration types keyed by hex color
 const decorationTypeCache = new Map<string, vscode.TextEditorDecorationType>();
@@ -58,6 +58,7 @@ export function applyHighlightsToEditor2(
       byColor.set(h.color, []);
     }
 
+    // oxlint-disable-next-line typescript/no-non-null-assertion
     byColor.get(h.color)!.push({
       range: h.range,
     });

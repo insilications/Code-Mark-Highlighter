@@ -63,7 +63,7 @@
     "eslint/prefer-promise-reject-errors": "warn",
     "eslint/radix": "warn",
     "eslint/require-await": "warn",
-    "eslint/require-unicode-regexp": "warn",
+    "eslint/require-unicode-regexp": "off",
     "eslint/sort-vars": "warn",
     "eslint/symbol-description": "warn",
     "for-direction": "error",
@@ -84,6 +84,12 @@
     "jsdoc/require-returns-type": "warn",
     "jsdoc/require-throws-type": "warn",
     "jsdoc/require-yields-type": "warn",
+    "import/no-unassigned-import": [
+      "warn",
+      {
+        "allow": ["**/*.css"]
+      }
+    ],
     "legibility/hoist-if-operators": [
       "warn",
       {
@@ -115,7 +121,7 @@
         "max": 3
       }
     ],
-    "legibility/no-computed-values": ["warn", { "max": 3 }],
+    "legibility/no-computed-values": ["warn", { "max": 4 }],
     "legibility/no-direct-node-bin-smoke": "warn",
     "legibility/no-hidden-side-effects": "warn",
     "legibility/no-identity-array-callback": "warn",
@@ -128,7 +134,7 @@
     "legibility/no-standalone-array-mutations": "off",
     "legibility/no-trivial-wrapper-functions": "warn",
     "legibility/no-unnecessary-block-callback": "warn",
-    "legibility/prefer-concat-object-assign": "warn",
+    "legibility/prefer-concat-object-assign": "off",
     "legibility/prefer-early-return": "warn",
     "legibility/prefer-flat-map": "warn",
     "legibility/prefer-guard-clauses": "warn",

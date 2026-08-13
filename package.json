@@ -24,7 +24,11 @@
   "type": "module",
   "main": "./out/extension.js",
   "scripts": {
+    "build": "bun run clean && bun run build:extension && bun run build:webview",
+    "build:extension": "vite build --mode extension",
+    "build:webview": "vite build --mode webview",
     "check": "tsc --build --verbose",
+    "clean": "rm -rf out",
     "compile": "rolldown -c",
     "fmt": "oxfmt",
     "fmt:check": "oxfmt --check",
@@ -34,7 +38,7 @@
     "lint:sarif": "oxlint --format=sarif",
     "package": "rolldown -c",
     "test-compile": "tsc -p ./",
-    "vscode:prepublish": "npm run package",
+    "vscode:prepublish": "bun run package",
     "watch": "rolldown -c -w"
   },
   "dependencies": {

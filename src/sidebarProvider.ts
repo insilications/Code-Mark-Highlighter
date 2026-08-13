@@ -5,7 +5,7 @@ import * as fs from "node:fs";
 
 import * as vscode from "vscode";
 import { type Messenger } from "vscode-messenger";
-import { NotificationType, type WebviewIdMessageParticipant } from "vscode-messenger-common";
+import { type NotificationType, type WebviewIdMessageParticipant } from "vscode-messenger-common";
 
 import { applyHighlightsToEditor2 } from "./decorationManager";
 import { jumpToHighlight } from "./highlightNavigator";

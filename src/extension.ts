@@ -52,7 +52,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<Messen
     );
 
     // Debounce timer for reapplying highlights during `vscode.workspace.onDidChangeTextDocument`
-    let debounceTimer: NodeJS.Timeout | undefined;
+    // let debounceTimer: NodeJS.Timeout | undefined;
 
     context.subscriptions.push(
       vscode.window.registerWebviewViewProvider(SidebarProvider.VIEW_ID, sidebar, {
