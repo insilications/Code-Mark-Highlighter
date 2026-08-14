@@ -31,7 +31,7 @@
     ]
   },
   "formatter": {
-    "enabled": false,
+    "enabled": false
   },
   "html": {
     "assist": {
@@ -39,7 +39,7 @@
     },
     "experimentalFullSupportEnabled": true,
     "formatter": {
-      "enabled": false,
+      "enabled": false
     },
     "linter": {
       "enabled": true
@@ -52,8 +52,9 @@
     "assist": {
       "enabled": true
     },
+    "experimentalEmbeddedSnippetsEnabled": true,
     "formatter": {
-      "enabled": false,
+      "enabled": false
     },
     "globals": [
       "chrome",
@@ -216,6 +217,10 @@
     },
     "linter": {
       "enabled": true
+    },
+    "parser": {
+      "allowComments": true,
+      "allowTrailingCommas": true
     }
   },
   "linter": {
@@ -348,28 +353,6 @@
       }
     }
   },
-  "overrides": [
-    {
-      "includes": [
-        ".vscode/**"
-      ],
-      "json": {
-        "parser": {
-          "allowComments": true
-        }
-      }
-    },
-    {
-      "includes": [
-        "src/_locales/**"
-      ],
-      "json": {
-        "formatter": {
-          "expand": "always"
-        }
-      }
-    }
-  ],
   "vcs": {
     "clientKind": "git",
     "defaultBranch": "patched",

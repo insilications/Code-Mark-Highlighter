@@ -3,7 +3,7 @@ const escapeMap: Record<string, string> = {
   "<": "&lt;",
   ">": "&gt;",
   '"': "&quot;",
-  "'": "&#039;",
+  "'": "&#x27;",
 };
 
 // A single regex that matches any of the target characters for the `esc` function.

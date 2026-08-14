@@ -9,12 +9,11 @@
   },
   "env": {
     "browser": true,
+    "vitest": true,
+    "jest": true,
     "commonjs": true,
     "es2024": true,
     "node": true
-  },
-  "globals": {
-    "vscode": "readonly"
   },
   "ignorePatterns": ["node_modules/", "out/"],
   "jsPlugins": [
@@ -57,6 +56,7 @@
     "eslint/no-prototype-builtins": "warn",
     "eslint/no-redeclare": "warn",
     "eslint/no-self-compare": "warn",
+    "eslint/no-shadow": ["warn", { "hoist": "all", "builtinGlobals": true }],
     "eslint/no-throw-literal": "warn",
     "eslint/no-useless-return": "warn",
     "eslint/no-warning-comments": "warn",
@@ -170,7 +170,7 @@
     "no-new-native-nonconstructor": "error",
     "no-nonoctal-decimal-escape": "error",
     "no-obj-calls": "error",
-    "no-proto": ["error"],
+    "no-proto": "error",
     "no-prototype-builtins": "warn",
     "no-regex-spaces": "error",
     "no-self-assign": "error",

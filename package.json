@@ -35,6 +35,8 @@
     "lint:fix": "oxlint --fix",
     "lint:full": "oxlint",
     "lint:sarif": "oxlint --format=sarif",
+    "lint:biome": "biome lint --max-diagnostics 999",
+    "lint:biome:summary": "biome lint --max-diagnostics 999 --reporter=summary",
     "test-compile": "tsc -p ./",
     "vscode:prepublish": "bun run build"
   },
