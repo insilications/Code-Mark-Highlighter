@@ -1,6 +1,6 @@
 // Sidebar Webview panel. Shows all highlights with filter, navigation and CRUD actions.
 
-import * as fs from "node:fs";
+import fs from "node:fs";
 
 import type { HighlightRepository } from "@core/highlightRepository";
 import {

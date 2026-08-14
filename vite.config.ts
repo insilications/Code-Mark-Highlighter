@@ -137,11 +137,8 @@ export default defineConfig(({ mode }: ConfigEnv): UserConfig => {
     input: isExtension
       ? { extension: "src/extension/extension.ts" }
       : { mainWebView: "src/webview/mainWebView.ts" },
-
     plugins: isWebview ? [inlineWebviewPlugin()] : [],
-
     publicDir: false,
-
     css: {
       transformer: "lightningcss",
     },
@@ -157,10 +154,12 @@ export default defineConfig(({ mode }: ConfigEnv): UserConfig => {
       target: "esnext",
       modulePreload: false,
       rolldownOptions: {
-        // preserveEntrySignatures: "strict",
         preserveEntrySignatures: isExtension ? "strict" : false,
-        platform: isExtension ? "node" : "browser",
-        external: isExtension ? extensionExternal : ["acquireVsCodeApi"],
+        /* VS Code now supports ESM extensions, so we can use "browser" for both the Extension
+         * and the Webview to avoid Node.js polyfills.
+         */
+        platform: "browser",
+        external: isExtension ? extensionExternal : [],
         tsconfig: isExtension ? "./tsconfig.node.json" : "./tsconfig.webview.json",
         output: {
           format: "esm",
@@ -171,6 +170,9 @@ export default defineConfig(({ mode }: ConfigEnv): UserConfig => {
            * inside mainWebView.html.
            */
           codeSplitting: isExtension,
+        },
+        optimization: {
+          inlineConst: { mode: "all", pass: 3 },
         },
       },
     },
