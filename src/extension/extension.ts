@@ -1,13 +1,13 @@
 import * as vscode from "vscode";
 import { Messenger, type MessengerDiagnostic } from "vscode-messenger";
 
-import { highlightCodeQuick } from "./commands";
-import { ACTIVATED_CONTEXT } from "./constants";
-import { disposeAllDecorations } from "./decorationManager";
-import { HighlightRepository } from "./highlightRepository";
-import { SidebarProvider } from "./sidebarProvider";
+import { highlightCodeQuick } from "../commands";
+import { ACTIVATED_CONTEXT } from "../core/constants";
+import type { HighlightStore } from "../core/types";
+import { disposeAllDecorations } from "../decorationManager";
+import { HighlightRepository } from "../highlightRepository";
+import { SidebarProvider } from "../sidebarProvider";
 import { loadHighlights } from "./storage";
-import type { HighlightStore } from "./types";
 
 let sidebar: SidebarProvider;
 let highlightRepository: HighlightRepository;
@@ -15,7 +15,7 @@ const messenger = new Messenger();
 
 export function activate(context: vscode.ExtensionContext): MessengerDiagnostic {
   try {
-    const highlightStore: HighlightStore = loadHighlights(context);
+    const highlightStore: HighlightStore = loadHighlights();
 
     highlightRepository = HighlightRepository.fromStore(highlightStore);
 

@@ -130,7 +130,7 @@ export default defineConfig(({ mode }: ConfigEnv): UserConfig => {
 
   return {
     input: isExtension
-      ? { extension: "src/extension.ts" }
+      ? { extension: "src/extension/extension.ts" }
       : { mainWebView: "webview/mainWebView.ts" },
 
     plugins: isWebview ? [inlineWebviewPlugin()] : [],

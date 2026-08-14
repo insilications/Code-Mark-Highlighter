@@ -1,6 +1,6 @@
+import { serializeRange } from "./core/serialization";
+import type { Highlight, HighlightViewModel } from "./core/types";
 import { compareStringsOrdinal } from "./highlightUtils";
-import { serializeRange } from "./serialization";
-import type { Highlight, HighlightViewModel } from "./types";
 
 /**
  * One Intl.Collator instance is shared for the lifetime of the module.

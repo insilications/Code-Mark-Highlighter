@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 
-import type { Highlight } from "./types";
+import type { Highlight } from "./core/types";
 
 /**
  * Compares two vscode.Range objects in document order.

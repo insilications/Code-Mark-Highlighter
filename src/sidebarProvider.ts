@@ -13,12 +13,12 @@ import {
   updateWebViewNotificationType,
   webViewReadyNotificationType,
 } from "./core/messenger-types";
+import type { FileHighlightsViewModel, Highlight, IJumpToHighlightParams } from "./core/types";
 import { applyHighlightsToEditor } from "./decorationManager";
+import { jumpToHighlight } from "./extension/highlightNavigator";
+import { getWorkspaceRelativePath } from "./extension/storage";
 import { getFuzzyThreshold } from "./extension/utils";
-import { jumpToHighlight } from "./highlightNavigator";
 import type { HighlightRepository } from "./highlightRepository";
-import { getWorkspaceRelativePath } from "./storage";
-import type { FileHighlightsViewModel, Highlight, IJumpToHighlightParams } from "./types";
 
 export class SidebarProvider implements vscode.WebviewViewProvider {
   public static readonly VIEW_ID = "codemark.highlightsPanel";

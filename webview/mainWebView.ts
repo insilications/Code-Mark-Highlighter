@@ -7,8 +7,8 @@ import {
   updateWebViewNotificationType,
   webViewReadyNotificationType,
 } from "../src/core/messenger-types";
+import type { FileHighlightsViewModel, HighlightViewModel } from "../src/core/types";
 import { hexToRgba } from "../src/core/utils";
-import type { FileHighlightsViewModel, HighlightViewModel } from "../src/types";
 
 import "./mainWebView.css";
 import { esc } from "./utils";

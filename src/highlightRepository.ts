@@ -1,14 +1,19 @@
 import * as vscode from "vscode";
 
+import { deserializeHighlightStore, serializeHighlightStore } from "./core/serialization";
+import type {
+  FileHighlights,
+  FileHighlightsViewModel,
+  Highlight,
+  HighlightStore,
+} from "./core/types";
+import { saveHighlights } from "./extension/storage";
 import {
   insertHighlightSorted,
   rangesEqual,
   repairHighlightRanges,
   sortHighlightsByRange,
 } from "./highlightUtils";
-import { deserializeHighlightStore, serializeHighlightStore } from "./serialization";
-import { saveHighlights } from "./storage";
-import type { FileHighlights, FileHighlightsViewModel, Highlight, HighlightStore } from "./types";
 import { compareFilePathsForDisplay, createHighlightViewModels } from "./webviewProjection";
 
 /**
@@ -136,7 +141,7 @@ export class HighlightRepository {
    * A single-item batch delegates to addHighlight(), where binary insertion is preferable.
    */
   addHighlights(filePath: string, newHighlights: readonly Highlight[]): void {
-    const newHighlightsLength = newHighlights.length;
+    const newHighlightsLength: number = newHighlights.length;
 
     if (newHighlightsLength === 0) {
       return;
@@ -147,12 +152,12 @@ export class HighlightRepository {
       return;
     }
 
-    let highlights = this.fileHighlights.get(filePath);
+    let highlights: Highlight[] | undefined = this.fileHighlights.get(filePath);
 
     if (highlights === undefined) {
       highlights = new Array<Highlight>(newHighlightsLength);
 
-      for (let i = 0; i < newHighlightsLength; i++) {
+      for (let i: number = 0; i < newHighlightsLength; i++) {
         highlights[i] = newHighlights[i]!;
       }
 
@@ -189,14 +194,14 @@ export class HighlightRepository {
    * cache is invalidated.
    */
   removeHighlight(filePath: string, highlightId: string): Highlight | undefined {
-    const highlights = this.fileHighlights.get(filePath);
+    const highlights: Highlight[] | undefined = this.fileHighlights.get(filePath);
 
     if (highlights === undefined) {
       return undefined;
     }
 
-    for (let i = 0; i < highlights.length; i++) {
-      const highlight = highlights[i]!;
+    for (let i: number = 0; i < highlights.length; i++) {
+      const highlight: Highlight = highlights[i]!;
 
       if (highlight.id !== highlightId) {
         continue;
@@ -221,7 +226,7 @@ export class HighlightRepository {
    * This is a structural change, so successful deletion invalidates the cached filepath ordering.
    */
   deleteFile(filePath: string): boolean {
-    const deleted = this.fileHighlights.delete(filePath);
+    const deleted: boolean = this.fileHighlights.delete(filePath);
 
     if (deleted) {
       this.invalidateSortedFilePaths();
@@ -245,7 +250,7 @@ export class HighlightRepository {
       return;
     }
 
-    const fileAlreadyExists = this.fileHighlights.has(filePath);
+    const fileAlreadyExists: boolean = this.fileHighlights.has(filePath);
 
     const highlights = new Array<Highlight>(newHighlights.length);
 
@@ -275,14 +280,14 @@ export class HighlightRepository {
    * one final sort instead of repeated remove/reinsert operations.
    */
   updateHighlightRange(filePath: string, highlightId: string, newRange: vscode.Range): boolean {
-    const highlights = this.fileHighlights.get(filePath);
+    const highlights: Highlight[] | undefined = this.fileHighlights.get(filePath);
 
     if (highlights === undefined) {
       return false;
     }
 
-    for (let i = 0; i < highlights.length; i++) {
-      const highlight = highlights[i]!;
+    for (let i: number = 0; i < highlights.length; i++) {
+      const highlight: Highlight = highlights[i]!;
 
       if (highlight.id !== highlightId) {
         continue;
@@ -325,7 +330,7 @@ export class HighlightRepository {
     filePath: string,
     repair: (highlight: Highlight) => vscode.Range | undefined,
   ): number {
-    const highlights = this.fileHighlights.get(filePath);
+    const highlights: Highlight[] | undefined = this.fileHighlights.get(filePath);
 
     if (highlights === undefined) {
       return 0;
@@ -356,7 +361,7 @@ export class HighlightRepository {
    */
   getSortedFilePaths(): readonly string[] {
     if (this.sortedFilePathsCache === undefined) {
-      const filePaths = Array.from(this.fileHighlights.keys());
+      const filePaths: string[] = Array.from(this.fileHighlights.keys());
 
       filePaths.sort(compareFilePathsForDisplay);
 

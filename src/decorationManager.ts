@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 
+import { type Highlight } from "./core/types";
 import { hexToRgba } from "./core/utils";
-import { type Highlight } from "./types";
 
 // Cache of decoration types keyed by hex color
 const decorationTypeCache = new Map<string, vscode.TextEditorDecorationType>();
