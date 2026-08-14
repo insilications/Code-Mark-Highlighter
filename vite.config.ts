@@ -80,6 +80,7 @@ function inlineWebviewPlugin(): Plugin {
           cssParts.push(assetSourceToString(output.source));
 
           // Prevent this CSS asset from being written to `out/`.
+          // oxlint-disable-next-line typescript/no-dynamic-delete
           delete bundle[cssFileName];
         } else {
           this.error(`Could not find emitted CSS asset: ${cssFileName}`);
@@ -98,6 +99,7 @@ function inlineWebviewPlugin(): Plugin {
       css = css.replaceAll(/<\/style/gi, "<\\/style");
 
       // Prevent mainWebView.js from being written to out/.
+      // oxlint-disable-next-line typescript/no-dynamic-delete
       delete bundle[entryChunk.fileName];
 
       /*
@@ -129,6 +131,9 @@ export default defineConfig(({ mode }: ConfigEnv): UserConfig => {
   }
 
   return {
+    resolve: {
+      tsconfigPaths: true,
+    },
     input: isExtension
       ? { extension: "src/extension/extension.ts" }
       : { mainWebView: "src/webview/mainWebView.ts" },

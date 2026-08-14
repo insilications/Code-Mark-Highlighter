@@ -1,13 +1,13 @@
 // oxlint-disable legibility/no-quadratic-patterns max-depth legibility/max-control-flow-depth
-import { HOST_EXTENSION } from "vscode-messenger-common";
-import { Messenger, type VsCodeApi } from "vscode-messenger-webview";
 
 import {
   jumpToHighlightNotificationType,
   updateWebViewNotificationType,
   webViewReadyNotificationType,
-} from "../core/messenger-types";
-import type { FileHighlightsViewModel, HighlightViewModel } from "../core/types";
+} from "@core/messenger-types";
+import type { FileHighlightsViewModel, HighlightViewModel } from "@core/types";
+import { HOST_EXTENSION } from "vscode-messenger-common";
+import { Messenger, type VsCodeApi } from "vscode-messenger-webview";
 
 import "./mainWebView.css";
 import { escape, hexToRgba } from "./utils";
@@ -41,18 +41,6 @@ declare function acquireVsCodeApi(): VsCodeApi;
 
   // oxlint-disable-next-line typescript/no-non-null-assertion typescript/no-unsafe-type-assertion
   const searchEl: HTMLInputElement = document.getElementById("search")! as HTMLInputElement;
-
-  // // Search / filter
-  searchEl.addEventListener("input", (e: Event): void => {
-    // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-    searchNeedle = (e.target as HTMLInputElement).value.trim().toLowerCase();
-    render();
-  });
-  filterTagEl.addEventListener("change", (e: Event): void => {
-    // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-    tagNeedle = (e.target as HTMLInputElement).value.trim().toLowerCase();
-    render();
-  });
 
   function rebuildTagFilter(): void {
     const uniqueTags = new Set<string>();
@@ -216,6 +204,27 @@ declare function acquireVsCodeApi(): VsCodeApi;
     return result;
   }
 
+  function renderCard(filePath: string, highlight: HighlightViewModel): string {
+    const snippet = escape(highlight.codeSnippetDisplay.split("\\n").slice(0, 12).join("\\n"));
+    const fileName = escape(filePath);
+    const tagColor = escape(highlight.color);
+    const tagBg = hexToRgba(highlight.color, 0.18);
+
+    return `<div class="card" data-id="${escape(highlight.id)}" style="border: 1px solid ${tagColor};">
+      <div class="card-top">
+        ${highlight.tag ? `<span class="card-tag" style="background:${tagBg};color:${tagColor}">${escape(highlight.tag)}</span>` : ""}
+        <div class="card-actions">
+          <button class="btn btn-jump">↗ Jump</button>
+          <button class="btn btn-tag">🏷 Tag</button>
+          <button class="btn btn-color">🎨 Color</button>
+          <button class="btn btn-danger btn-delete">🗑</button>
+        </div>
+        <span class="card-file" title="${fileName}">${fileName}</span>
+      </div>
+      <div class="card-snippet">${snippet}</div>
+    </div>`;
+  }
+
   function render(): void {
     const filteredFileHighlights: FileHighlightsViewModel[] = filterFileHighlights();
     // oxlint-disable-next-line prefer-template
@@ -346,26 +355,17 @@ declare function acquireVsCodeApi(): VsCodeApi;
     }
   }
 
-  function renderCard(filePath: string, highlight: HighlightViewModel): string {
-    const snippet = escape(highlight.codeSnippetDisplay.split("\\n").slice(0, 12).join("\\n"));
-    const fileName = escape(filePath);
-    const tagColor = escape(highlight.color);
-    const tagBg = hexToRgba(highlight.color, 0.18);
-
-    return `<div class="card" data-id="${escape(highlight.id)}" style="border: 1px solid ${tagColor};">
-      <div class="card-top">
-        ${highlight.tag ? `<span class="card-tag" style="background:${tagBg};color:${tagColor}">${escape(highlight.tag)}</span>` : ""}
-        <div class="card-actions">
-          <button class="btn btn-jump">↗ Jump</button>
-          <button class="btn btn-tag">🏷 Tag</button>
-          <button class="btn btn-color">🎨 Color</button>
-          <button class="btn btn-danger btn-delete">🗑</button>
-        </div>
-        <span class="card-file" title="${fileName}">${fileName}</span>
-      </div>
-      <div class="card-snippet">${snippet}</div>
-    </div>`;
-  }
+  // // Search / filter
+  searchEl.addEventListener("input", (e: Event): void => {
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+    searchNeedle = (e.target as HTMLInputElement).value.trim().toLowerCase();
+    render();
+  });
+  filterTagEl.addEventListener("change", (e: Event): void => {
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+    tagNeedle = (e.target as HTMLInputElement).value.trim().toLowerCase();
+    render();
+  });
 
   messenger.onNotification(
     updateWebViewNotificationType,
