@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 
-import { sortHighlightsByRange } from "../highlightUtils";
 import { HIGHLIGHT_STORE_VERSION } from "./constants";
+import { sortHighlightsByRange } from "./highlightUtils";
 import type {
   FileHighlights,
   FileHighlightsSerialized,

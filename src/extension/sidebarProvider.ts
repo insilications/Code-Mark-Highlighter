@@ -7,18 +7,18 @@ import * as vscode from "vscode";
 import { type Messenger } from "vscode-messenger";
 import { type WebviewIdMessageParticipant } from "vscode-messenger-common";
 
+import type { HighlightRepository } from "../core/highlightRepository";
 import {
   jumpToHighlightNotificationType,
   refreshActiveEditorNotificationType,
   updateWebViewNotificationType,
   webViewReadyNotificationType,
-} from "./core/messenger-types";
-import type { FileHighlightsViewModel, Highlight, IJumpToHighlightParams } from "./core/types";
-import { applyHighlightsToEditor } from "./decorationManager";
-import { jumpToHighlight } from "./extension/highlightNavigator";
-import { getWorkspaceRelativePath } from "./extension/storage";
-import { getFuzzyThreshold } from "./extension/utils";
-import type { HighlightRepository } from "./highlightRepository";
+} from "../core/messenger-types";
+import type { FileHighlightsViewModel, Highlight, IJumpToHighlightParams } from "../core/types";
+import { applyHighlightsToEditor } from "../decorationManager";
+import { jumpToHighlight } from "./highlightNavigator";
+import { getWorkspaceRelativePath } from "./storage";
+import { getFuzzyThreshold } from "./utils";
 
 export class SidebarProvider implements vscode.WebviewViewProvider {
   public static readonly VIEW_ID = "codemark.highlightsPanel";

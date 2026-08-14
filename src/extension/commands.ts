@@ -3,9 +3,9 @@ import crypto from "node:crypto";
 import { litedent } from "litedent";
 import * as vscode from "vscode";
 
-import { applyHighlightsToEditor } from "./decorationManager";
-import { hashText } from "./highlightMatcher";
-import type { HighlightRepository } from "./highlightRepository";
+import type { HighlightRepository } from "../core/highlightRepository";
+import { applyHighlightsToEditor } from "../decorationManager";
+import { hashText } from "../highlightMatcher";
 import { SidebarProvider } from "./sidebarProvider";
 
 /** Command: Quick Highlight Code */

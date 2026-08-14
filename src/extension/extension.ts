@@ -1,12 +1,12 @@
 import * as vscode from "vscode";
 import { Messenger, type MessengerDiagnostic } from "vscode-messenger";
 
-import { highlightCodeQuick } from "../commands";
 import { ACTIVATED_CONTEXT } from "../core/constants";
+import { HighlightRepository } from "../core/highlightRepository";
 import type { HighlightStore } from "../core/types";
 import { disposeAllDecorations } from "../decorationManager";
-import { HighlightRepository } from "../highlightRepository";
-import { SidebarProvider } from "../sidebarProvider";
+import { highlightCodeQuick } from "./commands";
+import { SidebarProvider } from "./sidebarProvider";
 import { loadHighlights } from "./storage";
 
 let sidebar: SidebarProvider;

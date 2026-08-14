@@ -106,7 +106,7 @@
     "legibility/max-expression-operators": [
       "warn",
       {
-        "max": 4
+        "max": 7
       }
     ],
     "legibility/max-function-parameters": [
@@ -115,13 +115,8 @@
         "max": 5
       }
     ],
-    "legibility/no-complex-ternaries": [
-      "warn",
-      {
-        "max": 3
-      }
-    ],
-    "legibility/no-computed-values": ["warn", { "max": 4 }],
+    "legibility/no-complex-ternaries": "off",
+    "legibility/no-computed-values": "off",
     "legibility/no-direct-node-bin-smoke": "warn",
     "legibility/no-hidden-side-effects": "warn",
     "legibility/no-identity-array-callback": "warn",

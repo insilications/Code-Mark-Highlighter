@@ -1,6 +1,6 @@
-import * as vscode from "vscode";
+import type * as vscode from "vscode";
 
-import type { Highlight } from "./core/types";
+import type { Highlight } from "./types";
 
 /**
  * Compares two vscode.Range objects in document order.
@@ -59,7 +59,7 @@ export function compareStringsOrdinal(a: string, b: string): number {
  * still end up in the same deterministic order.
  */
 export function compareHighlightsByRange(a: Highlight, b: Highlight): number {
-  const rangeOrder = compareRanges(a.range, b.range);
+  const rangeOrder: number = compareRanges(a.range, b.range);
 
   return rangeOrder !== 0 ? rangeOrder : compareStringsOrdinal(a.id, b.id);
 }
@@ -143,11 +143,11 @@ export function repairHighlightRanges(
   highlights: Highlight[],
   repair: (highlight: Highlight) => vscode.Range | undefined,
 ): number {
-  let changedCount = 0;
+  let changedCount: number = 0;
 
-  for (let i = 0; i < highlights.length; i++) {
-    const highlight = highlights[i]!;
-    const repairedRange = repair(highlight);
+  for (let i: number = 0; i < highlights.length; i++) {
+    const highlight: Highlight = highlights[i]!;
+    const repairedRange: vscode.Range | undefined = repair(highlight);
 
     if (repairedRange !== undefined && !rangesEqual(highlight.range, repairedRange)) {
       highlight.range = repairedRange;
