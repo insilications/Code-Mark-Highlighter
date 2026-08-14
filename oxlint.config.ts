@@ -1,38 +1,37 @@
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "categories": {
-    "correctness": "error",
-    "pedantic": "warn",
-    "perf": "warn",
-    "nursery": "warn",
-    "suspicious": "warn",
-    "restriction": "warn"
+import { defineConfig } from "oxlint";
+
+export default defineConfig({
+  categories: {
+    correctness: "error",
+    pedantic: "warn",
+    perf: "warn",
+    nursery: "warn",
+    suspicious: "warn",
+    restriction: "warn",
   },
-  "env": {
-    "browser": true,
-    "vitest": true,
-    "jest": true,
-    "commonjs": true,
-    "es2024": true,
-    "shared-node-browser": true,
-    "node": true
+  env: {
+    vitest: true,
+    jest: true,
+    es2024: true,
+    node: true,
+    browser: true,
   },
-  "ignorePatterns": ["node_modules/", "out/"],
-  "jsPlugins": [
+  ignorePatterns: ["node_modules/", "out/"],
+  jsPlugins: [
     "eslint-plugin-regexp",
     {
-      "name": "legibility",
-      "specifier": "eslint-plugin-legibility"
-    }
+      name: "legibility",
+      specifier: "eslint-plugin-legibility",
+    },
   ],
-  "options": {
-    "reportUnusedDisableDirectives": "warn",
-    "respectEslintDisableDirectives": true,
-    "typeAware": true,
-    "typeCheck": true
+  options: {
+    reportUnusedDisableDirectives: "warn",
+    respectEslintDisableDirectives: true,
+    typeAware: true,
+    typeCheck: true,
   },
-  "plugins": ["typescript", "eslint", "oxc", "jsdoc", "unicorn", "node", "promise", "import"],
-  "rules": {
+  plugins: ["typescript", "eslint", "oxc", "jsdoc", "unicorn", "node", "promise", "import"],
+  rules: {
     "constructor-super": "error",
     "eslint/accessor-pairs": "warn",
     "eslint/array-callback-return": "warn",
@@ -56,9 +55,9 @@
     "eslint/no-object-constructor": "warn",
     "eslint/no-promise-executor-return": "warn",
     "eslint/no-prototype-builtins": "warn",
-    "eslint/no-redeclare": "warn",
+    "eslint/no-redeclare": ["warn", { builtinGlobals: true }],
     "eslint/no-self-compare": "warn",
-    "eslint/no-shadow": ["warn", { "hoist": "all", "builtinGlobals": true }],
+    "eslint/no-shadow": ["warn", { hoist: "all", builtinGlobals: false }],
     "eslint/no-throw-literal": "warn",
     "eslint/no-useless-return": "warn",
     "eslint/no-warning-comments": "warn",
@@ -74,8 +73,8 @@
     "import/no-cycle": [
       "error",
       {
-        "maxDepth": 3
-      }
+        maxDepth: 3,
+      },
     ],
     "jsdoc/require-param": "off",
     "jsdoc/require-param-description": "warn",
@@ -89,33 +88,33 @@
     "import/no-unassigned-import": [
       "warn",
       {
-        "allow": ["**/*.css"]
-      }
+        allow: ["**/*.css"],
+      },
     ],
     "legibility/hoist-if-operators": [
       "warn",
       {
-        "max": 1
-      }
+        max: 1,
+      },
     ],
     "legibility/max-array-chain-depth": [
       "warn",
       {
-        "max": 2
-      }
+        max: 2,
+      },
     ],
-    "legibility/max-control-flow-depth": ["warn", { "max": 4 }],
+    "legibility/max-control-flow-depth": ["warn", { max: 4 }],
     "legibility/max-expression-operators": [
       "warn",
       {
-        "max": 7
-      }
+        max: 7,
+      },
     ],
     "legibility/max-function-parameters": [
       "warn",
       {
-        "max": 5
-      }
+        max: 5,
+      },
     ],
     "legibility/no-complex-ternaries": "off",
     "legibility/no-computed-values": "off",
@@ -193,14 +192,14 @@
     "no-unused-vars": [
       "warn",
       {
-        "args": "all",
-        "argsIgnorePattern": "^_",
-        "caughtErrors": "all",
-        "caughtErrorsIgnorePattern": "^_",
-        "destructuredArrayIgnorePattern": "^_",
-        "ignoreRestSiblings": true,
-        "varsIgnorePattern": "^_"
-      }
+        args: "all",
+        argsIgnorePattern: "^_",
+        caughtErrors: "all",
+        caughtErrorsIgnorePattern: "^_",
+        destructuredArrayIgnorePattern: "^_",
+        ignoreRestSiblings: true,
+        varsIgnorePattern: "^_",
+      },
     ],
     "no-useless-assignment": ["warn"],
     "no-useless-backreference": "off",
@@ -213,9 +212,9 @@
       "warn",
       "always",
       {
-        "avoidQuotes": true,
-        "ignoreConstructors": false
-      }
+        avoidQuotes: true,
+        ignoreConstructors: false,
+      },
     ],
     "oxc/branches-sharing-code": "warn",
     "prefer-arrow-callback": ["warn"],
@@ -357,8 +356,8 @@
     "typescript/prefer-string-starts-ends-with": [
       "warn",
       {
-        "allowSingleElementEquality": "always"
-      }
+        allowSingleElementEquality: "always",
+      },
     ],
     "typescript/prefer-ts-expect-error": "warn",
     "typescript/related-getter-setter-pairs": "error",
@@ -367,18 +366,18 @@
     "typescript/restrict-template-expressions": [
       "error",
       {
-        "allow": [
+        allow: [
           {
-            "from": "lib",
-            "name": ["Error", "URL", "URLSearchParams", "Date"]
-          }
+            from: "lib",
+            name: ["Error", "URL", "URLSearchParams", "Date"],
+          },
         ],
-        "allowAny": true,
-        "allowBoolean": true,
-        "allowNullish": true,
-        "allowNumber": true,
-        "allowRegExp": true
-      }
+        allowAny: true,
+        allowBoolean: true,
+        allowNullish: true,
+        allowNumber: true,
+        allowRegExp: true,
+      },
     ],
     "typescript/return-await": ["error", "error-handling-correctness-only"],
     "typescript/strict-boolean-expressions": "error",
@@ -508,18 +507,18 @@
     "unicorn/prefer-module": "warn",
     "unicorn/prefer-node-protocol": "warn",
     "unicorn/prefer-number-properties": "warn",
-    "vitest/require-test-timeout": "warn"
+    "vitest/require-test-timeout": "warn",
   },
-  "settings": {
-    "jsdoc": {
-      "augmentsExtendsReplacesDocs": false,
-      "exemptDestructuredRootsFromChecks": false,
-      "ignoreInternal": false,
-      "ignorePrivate": false,
-      "ignoreReplacesDocs": true,
-      "implementsReplacesDocs": false,
-      "overrideReplacesDocs": true,
-      "tagNamePreference": {}
-    }
-  }
-}
+  settings: {
+    jsdoc: {
+      augmentsExtendsReplacesDocs: false,
+      exemptDestructuredRootsFromChecks: false,
+      ignoreInternal: false,
+      ignorePrivate: false,
+      ignoreReplacesDocs: true,
+      implementsReplacesDocs: false,
+      overrideReplacesDocs: true,
+      tagNamePreference: {},
+    },
+  },
+});

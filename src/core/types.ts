@@ -1,6 +1,5 @@
+import type { jumpToHighlight } from "@extension/highlightNavigator";
 import type * as vscode from "vscode";
-
-import type { jumpToHighlight } from "../extension/highlightNavigator";
 
 /**
  * Runtime representation of one bookmark/highlight.

@@ -32,11 +32,11 @@
     "fmt": "oxfmt",
     "fmt:check": "oxfmt --check",
     "lint": "oxlint --format=agent",
+    "lint:biome": "biome lint --max-diagnostics 999",
+    "lint:biome:summary": "biome lint --max-diagnostics 999 --reporter=summary",
     "lint:fix": "oxlint --fix",
     "lint:full": "oxlint",
     "lint:sarif": "oxlint --format=sarif",
-    "lint:biome": "biome lint --max-diagnostics 999",
-    "lint:biome:summary": "biome lint --max-diagnostics 999 --reporter=summary",
     "test-compile": "tsc -p ./",
     "vscode:prepublish": "bun run build"
   },
@@ -59,7 +59,7 @@
     "oxlint": "^1.78.0",
     "oxlint-tsgolint": "^7.0.2001",
     "rolldown": "^1.2.4",
-    "typescript": "^7.1.0-dev.20260812.1",
+    "typescript": "^7.1.0-dev.20260813.1",
     "vite": "^8.2.1"
   },
   "contributes": {

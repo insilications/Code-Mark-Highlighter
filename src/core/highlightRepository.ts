@@ -1,6 +1,6 @@
+import { saveHighlights } from "@extension/storage";
 import type * as vscode from "vscode";
 
-import { saveHighlights } from "../extension/storage";
 import {
   insertHighlightSorted,
   rangesEqual,
@@ -55,7 +55,7 @@ export class HighlightRepository {
    * Consequently, callers should not continue mutating a supplied Map directly after handing it to
    * this repository.
    */
-  constructor(fileHighlights: FileHighlights = new Map()) {
+  public constructor(fileHighlights: FileHighlights = new Map()) {
     this.fileHighlights = fileHighlights;
   }
 
@@ -65,7 +65,7 @@ export class HighlightRepository {
    * DeserializeHighlightStore() already restores all ordering invariants, so no second sorting pass
    * is necessary here.
    */
-  static fromStore(store: HighlightStore): HighlightRepository {
+  public static fromStore(store: HighlightStore): HighlightRepository {
     return new HighlightRepository(deserializeHighlightStore(store));
   }
 
@@ -74,12 +74,12 @@ export class HighlightRepository {
    *
    * Map.size is O(1).
    */
-  get fileCount(): number {
+  public get fileCount(): number {
     return this.fileHighlights.size;
   }
 
   /** Whether the repository contains any highlights for a file. */
-  hasFile(filePath: string): boolean {
+  public hasFile(filePath: string): boolean {
     return this.fileHighlights.has(filePath);
   }
 
@@ -92,7 +92,7 @@ export class HighlightRepository {
    * Highlight objects themselves remain mutable because range relocation and metadata editing are
    * legitimate runtime operations.
    */
-  getHighlights(filePath: string): readonly Highlight[] | undefined {
+  public getHighlights(filePath: string): readonly Highlight[] | undefined {
     return this.fileHighlights.get(filePath);
   }
 
@@ -112,7 +112,7 @@ export class HighlightRepository {
    *
    * No global filepath sorting occurs here.
    */
-  addHighlight(filePath: string, highlight: Highlight): number {
+  public addHighlight(filePath: string, highlight: Highlight): number {
     const highlights: Highlight[] | undefined = this.fileHighlights.get(filePath);
 
     if (highlights !== undefined) {
@@ -135,7 +135,7 @@ export class HighlightRepository {
    *
    * A single-item batch delegates to addHighlight(), where binary insertion is preferable.
    */
-  addHighlights(filePath: string, newHighlights: readonly Highlight[]): void {
+  public addHighlights(filePath: string, newHighlights: readonly Highlight[]): void {
     const newHighlightsLength: number = newHighlights.length;
 
     if (newHighlightsLength === 0) {
@@ -188,7 +188,7 @@ export class HighlightRepository {
    * If the final highlight is removed, the entire file entry disappears and the sorted-filepath
    * cache is invalidated.
    */
-  removeHighlight(filePath: string, highlightId: string): Highlight | undefined {
+  public removeHighlight(filePath: string, highlightId: string): Highlight | undefined {
     const highlights: Highlight[] | undefined = this.fileHighlights.get(filePath);
 
     if (highlights === undefined) {
@@ -220,7 +220,7 @@ export class HighlightRepository {
    *
    * This is a structural change, so successful deletion invalidates the cached filepath ordering.
    */
-  deleteFile(filePath: string): boolean {
+  public deleteFile(filePath: string): boolean {
     const deleted: boolean = this.fileHighlights.delete(filePath);
 
     if (deleted) {
@@ -239,7 +239,7 @@ export class HighlightRepository {
    *
    * The copied array is sorted exactly once.
    */
-  replaceHighlights(filePath: string, newHighlights: readonly Highlight[]): void {
+  public replaceHighlights(filePath: string, newHighlights: readonly Highlight[]): void {
     if (newHighlights.length === 0) {
       this.deleteFile(filePath);
       return;
@@ -274,7 +274,11 @@ export class HighlightRepository {
    * For fuzzy repair of many highlights, repairRangesForFile() is preferable because it performs
    * one final sort instead of repeated remove/reinsert operations.
    */
-  updateHighlightRange(filePath: string, highlightId: string, newRange: vscode.Range): boolean {
+  public updateHighlightRange(
+    filePath: string,
+    highlightId: string,
+    newRange: vscode.Range,
+  ): boolean {
     const highlights: Highlight[] | undefined = this.fileHighlights.get(filePath);
 
     if (highlights === undefined) {
@@ -321,7 +325,7 @@ export class HighlightRepository {
    *
    * All changed ranges are committed first and the array is sorted once.
    */
-  repairRangesForFile(
+  public repairRangesForFile(
     filePath: string,
     repair: (highlight: Highlight) => vscode.Range | undefined,
   ): number {
@@ -354,7 +358,7 @@ export class HighlightRepository {
    * Crucially, editing ranges, repairing fuzzy matches, changing tags/colors, or adding/removing
    * highlights from an existing non-empty file does not invalidate this cache.
    */
-  getSortedFilePaths(): readonly string[] {
+  public getSortedFilePaths(): readonly string[] {
     if (this.sortedFilePathsCache === undefined) {
       const filePaths: string[] = Array.from(this.fileHighlights.keys());
 
@@ -375,7 +379,7 @@ export class HighlightRepository {
    * A fresh result array is still intentionally produced because Highlight contents may have
    * changed since the previous webview update.
    */
-  createWebviewModel(): FileHighlightsViewModel[] {
+  public createWebviewModel(): FileHighlightsViewModel[] {
     const filePaths: readonly string[] = this.getSortedFilePaths();
 
     const result = new Array<FileHighlightsViewModel>(filePaths.length);
@@ -403,7 +407,7 @@ export class HighlightRepository {
   }
 
   /** Produces the model suitable for workspaceState or JSON persistence. */
-  toStore(): HighlightStore {
+  public toStore(): HighlightStore {
     return serializeHighlightStore(this.fileHighlights);
   }
 
@@ -413,7 +417,7 @@ export class HighlightRepository {
    * Avoid assigning a new Map: retaining the same Map instance keeps ownership and references
    * inside the repository simple.
    */
-  clear(): void {
+  public clear(): void {
     if (this.fileHighlights.size === 0) {
       return;
     }

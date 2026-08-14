@@ -10,3 +10,5 @@ PUBLISHING_GUIDE.md
 vite.config.ts
 .oxfmtrc.json
 .oxlintrc.jsonc
+oxlint.config.ts
+oxfmt.config.ts

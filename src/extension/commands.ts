@@ -1,10 +1,10 @@
 import crypto from "node:crypto";
 
+import type { HighlightRepository } from "@core/highlightRepository";
+import { hashText } from "@core/utils";
 import { litedent } from "litedent";
 import * as vscode from "vscode";
 
-import type { HighlightRepository } from "../core/highlightRepository";
-import { hashText } from "../core/utils";
 import { applyHighlightsToEditor } from "./decorationManager";
 import { SidebarProvider } from "./sidebarProvider";
 

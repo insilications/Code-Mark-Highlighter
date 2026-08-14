@@ -83,6 +83,7 @@ export function serializeHighlights(highlights: readonly Highlight[]): Highlight
   const result = new Array<HighlightSerialized>(highlights.length);
 
   for (let i = 0; i < highlights.length; i++) {
+    // oxlint-disable-next-line typescript/no-non-null-assertion
     result[i] = serializeHighlight(highlights[i]!);
   }
 
@@ -104,6 +105,7 @@ export function deserializeHighlights(serialized: readonly HighlightSerialized[]
   const result = new Array<Highlight>(serialized.length);
 
   for (let i = 0; i < serialized.length; i++) {
+    // oxlint-disable-next-line typescript/no-non-null-assertion
     result[i] = deserializeHighlight(serialized[i]!);
   }
 
@@ -126,10 +128,11 @@ export function deserializeHighlights(serialized: readonly HighlightSerialized[]
 export function serializeFileHighlights(
   fileHighlights: ReadonlyMap<string, readonly Highlight[]>,
 ): FileHighlightsSerialized {
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion
   const result = Object.create(null) as FileHighlightsSerialized;
 
   for (const [filePath, highlights] of fileHighlights) {
-    if (highlights.length !== 0) {
+    if (highlights.length > 0) {
       result[filePath] = serializeHighlights(highlights);
     }
   }
@@ -152,7 +155,9 @@ export function deserializeFileHighlights(serialized: FileHighlightsSerialized):
   const filePaths = Object.keys(serialized);
 
   for (let i = 0; i < filePaths.length; i++) {
+    // oxlint-disable-next-line typescript/no-non-null-assertion
     const filePath = filePaths[i]!;
+    // oxlint-disable-next-line typescript/no-non-null-assertion
     const serializedHighlights = serialized[filePath]!;
 
     if (serializedHighlights.length === 0) {

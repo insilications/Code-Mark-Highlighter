@@ -1,20 +1,20 @@
-// src/sidebarProvider.ts
-// Sidebar webview panel — shows all highlights with filter, navigation and CRUD actions.
+// Sidebar Webview panel. Shows all highlights with filter, navigation and CRUD actions.
 
 import * as fs from "node:fs";
 
-import * as vscode from "vscode";
-import { type Messenger } from "vscode-messenger";
-import { type WebviewIdMessageParticipant } from "vscode-messenger-common";
-
-import type { HighlightRepository } from "../core/highlightRepository";
+import type { HighlightRepository } from "@core/highlightRepository";
 import {
   jumpToHighlightNotificationType,
   refreshActiveEditorNotificationType,
   updateWebViewNotificationType,
   webViewReadyNotificationType,
-} from "../core/messenger-types";
-import type { FileHighlightsViewModel, Highlight, IJumpToHighlightParams } from "../core/types";
+} from "@core/messenger-types";
+import type { FileHighlightsViewModel, Highlight, IJumpToHighlightParams } from "@core/types";
+import { getNonce } from "@core/utils";
+import * as vscode from "vscode";
+import type { Messenger } from "vscode-messenger";
+import type { WebviewIdMessageParticipant } from "vscode-messenger-common";
+
 import { applyHighlightsToEditor } from "./decorationManager";
 import { jumpToHighlight } from "./highlightNavigator";
 import { getWorkspaceRelativePath } from "./storage";
@@ -28,7 +28,7 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
   // private mainWebViewScriptUri: vscode.Uri;
   private mainWebViewHtmlUri: vscode.Uri;
 
-  constructor(
+  public constructor(
     private readonly extensionContext: vscode.ExtensionContext,
     private readonly messenger: Messenger,
     public readonly highlightRepository: HighlightRepository,
@@ -38,7 +38,7 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
     this.mainWebViewHtmlUri = vscode.Uri.joinPath(this.extensionUri, "out", "mainWebView.html");
   }
 
-  resolveWebviewView(
+  public resolveWebviewView(
     webviewView: vscode.WebviewView,
     _context: vscode.WebviewViewResolveContext,
     _token: vscode.CancellationToken,
@@ -149,13 +149,4 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
     const htmlContent: string = fs.readFileSync(this.mainWebViewHtmlUri.fsPath, "utf-8");
     return htmlContent.replaceAll("#NNNN#", getNonce());
   }
-}
-
-function getNonce() {
-  let text = "";
-  const possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-  for (let i = 0; i < 32; i++) {
-    text += possible.charAt(Math.floor(Math.random() * possible.length));
-  }
-  return text;
 }
