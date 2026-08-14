@@ -2,7 +2,7 @@ import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 
 import type { NormalizedOutputOptions, OutputAsset, OutputBundle, OutputChunk } from "rolldown";
-import { defineConfig, type Plugin } from "vite";
+import { defineConfig, type ConfigEnv, type Plugin, type UserConfig } from "vite";
 
 const extensionExternal: (string | RegExp)[] = ["vscode", /^node:/];
 
@@ -120,7 +120,7 @@ function inlineWebviewPlugin(): Plugin {
   };
 }
 
-export default defineConfig(({ mode }) => {
+export default defineConfig(({ mode }: ConfigEnv): UserConfig => {
   const isExtension: boolean = mode === "extension";
   const isWebview: boolean = mode === "webview";
 
@@ -139,24 +139,15 @@ export default defineConfig(({ mode }) => {
 
     build: {
       outDir: "out",
-
       /*
        * Both independent builds write to out/, so neither should erase the
        * result produced by the other.
        */
       emptyOutDir: false,
-
-      /*
-       * Keep an external source map for the extension, but embed the webview
-       * source map because mainWebView.js itself won't be emitted.
-       */
       sourcemap: true,
-      // sourcemap: isExtension ? true : "inline",
-
       minify: false,
       target: "esnext",
       modulePreload: false,
-
       rolldownOptions: {
         preserveEntrySignatures: isExtension ? "strict" : false,
         platform: isExtension ? "node" : "browser",
@@ -165,7 +156,6 @@ export default defineConfig(({ mode }) => {
         output: {
           format: "esm",
           entryFileNames: "[name].js",
-
           /*
            * Keep extension code splitting available, but force the webview
            * into a single JS chunk so all generated JavaScript can be placed

@@ -64,12 +64,14 @@
       {
         "category": "Code Mark",
         "command": "codemark.highlightCodeQuick",
-        "title": "Code Mark: Quick Highlight Code"
+        "title": "Code Mark: Quick Highlight Code",
+        "when": "codemark.isActivated"
       },
       {
         "category": "Code Mark",
         "command": "codemark.showPanel",
-        "title": "Code Mark: Show Highlights Panel"
+        "title": "Code Mark: Show Highlights Panel",
+        "when": "codemark.isActivated"
       }
     ],
     "configuration": {
@@ -96,7 +98,8 @@
           "icon": "resources/devmarks.svg",
           "id": "codemark.highlightsPanel",
           "name": "Highlights",
-          "type": "webview"
+          "type": "webview",
+          "when": "codemark.isActivated"
         }
       ]
     },

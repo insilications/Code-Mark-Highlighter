@@ -13,7 +13,7 @@ let sidebar: SidebarProvider;
 let highlightRepository: HighlightRepository;
 const messenger = new Messenger();
 
-export async function activate(context: vscode.ExtensionContext): Promise<MessengerDiagnostic> {
+export function activate(context: vscode.ExtensionContext): MessengerDiagnostic {
   try {
     const highlightStore: HighlightStore = loadHighlights(context);
 
@@ -22,34 +22,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<Messen
     // =====================================================================
     // Sidebar Provider
     // =====================================================================
-    sidebar = new SidebarProvider(
-      context,
-      messenger,
-      highlightRepository,
-      // async (action: string, data: unknown): Promise<void> => {
-      // async (data: onActionData): Promise<void> => {
-      //   switch (data.id) {
-      //     case "jumpTo":
-      //       await jumpToHighlight(
-      //         data.filePath,
-      //         data.snippet,
-      //         data.codeHash,
-      //         getFuzzyThreshold(),
-      //         data.jumpInSplitEditor,
-      //       );
-      //       break;
-      //     // case "editTag":
-      //     //   // await editTagCmd(context, sidebar, d.id);
-      //     //   break;
-      //     // case "changeColor":
-      //     //   // await changeColorCmd(context, sidebar, d.id);
-      //     //   break;
-      //     case "refresh":
-      //       refreshActiveEditor(context);
-      //       break;
-      //   }
-      // },
-    );
+    sidebar = new SidebarProvider(context, messenger, highlightRepository);
 
     // Debounce timer for reapplying highlights during `vscode.workspace.onDidChangeTextDocument`
     // let debounceTimer: NodeJS.Timeout | undefined;
@@ -62,23 +35,16 @@ export async function activate(context: vscode.ExtensionContext): Promise<Messen
       // =====================================================================
       // Commands
       // =====================================================================
-      // vscode.commands.registerCommand("codemark.highlightCode", () =>
-      //   highlightCode(context, sidebar),
-      // ),
       vscode.commands.registerCommand("codemark.highlightCodeQuick", (): void => {
         highlightCodeQuick(sidebar);
       }),
       // vscode.commands.registerCommand("codemark.removeHighlight", () =>
       //   removeHighlightCmd(context, sidebar),
       // ),
-      // vscode.commands.registerCommand("codemark.editTag", () => editTagCmd(context, sidebar)),
-      // vscode.commands.registerCommand("codemark.changeColor", () => changeColorCmd(context, sidebar)),
       vscode.commands.registerCommand("codemark.showPanel", (): void => {
         sidebar.reveal();
         vscode.commands.executeCommand("codemark.highlightsPanel.focus");
       }),
-      // vscode.commands.registerCommand("codemark.nextHighlight", () => nextHighlight(context)),
-      // vscode.commands.registerCommand("codemark.prevHighlight", () => prevHighlight(context)),
       // vscode.commands.registerCommand("codemark.clearAllHighlights", () =>
       //   clearAllHighlightsCmd(context, sidebar),
       // ),
@@ -147,14 +113,14 @@ export async function activate(context: vscode.ExtensionContext): Promise<Messen
       }),
     );
 
-    // Apply highlights to all currently visible editors on startup
-    // for (const editor of vscode.window.visibleTextEditors) {
-    //   sidebar.applyForEditor(editor, context);
-    // }
+    // Success: Enable the commands and UI elements
+    vscode.commands.executeCommand("setContext", ACTIVATED_CONTEXT, true);
+    console.log("[Code Mark Highlighter] Activated ✓");
 
-    // Success: Enable the UI elements
-    await vscode.commands.executeCommand("setContext", ACTIVATED_CONTEXT, true);
-    console.log("[Code Mark Highlighter] activated ✓");
+    // Apply highlights to all currently visible editors on startup
+    for (const editor of vscode.window.visibleTextEditors) {
+      sidebar.applyForEditor(editor, context);
+    }
     return messenger.diagnosticApi({ withParameterData: true, withResponseData: true });
   } catch (err) {
     vscode.commands.executeCommand("setContext", ACTIVATED_CONTEXT, false);
@@ -169,4 +135,5 @@ export async function activate(context: vscode.ExtensionContext): Promise<Messen
 
 export function deactivate(): void {
   disposeAllDecorations();
+  vscode.commands.executeCommand("setContext", ACTIVATED_CONTEXT, false);
 }

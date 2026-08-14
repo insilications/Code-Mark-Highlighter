@@ -1,22 +1,4 @@
-import type { NotificationType } from "vscode-messenger-common";
-
-import type { ColorOption, FileHighlightsViewModel, IJumpToHighlightParams } from "./types";
-
-// =====================================================================
-// WebView message types — declare once, import on both sides
-// =====================================================================
-export const jumpToHighlightNotificationType: NotificationType<IJumpToHighlightParams> = {
-  method: "jumpToHighlight",
-};
-export const webViewReadyNotificationType: NotificationType<void> = {
-  method: "webViewReady",
-};
-export const refreshActiveEditorNotificationType: NotificationType<void> = {
-  method: "refreshActiveEditor",
-};
-export const updateWebViewNotificationType: NotificationType<FileHighlightsViewModel[]> = {
-  method: "updateWebView",
-};
+import type { ColorOption } from "./types";
 
 /**
  * Current persistence-format version.
@@ -28,7 +10,7 @@ export const HIGHLIGHT_STORE_VERSION = 1;
 
 export const WS_STATE_KEY = "codemark.highlights";
 export const EXTENSION_KEY = "codemark";
-export const ACTIVATED_CONTEXT = `${EXTENSION_KEY}:isActivated`;
+export const ACTIVATED_CONTEXT = `${EXTENSION_KEY}.isActivated`;
 
 export const PRESET_COLORS: ColorOption[] = [
   { label: "Golden Yellow", emoji: "🟡", hex: "#FFD700" },
