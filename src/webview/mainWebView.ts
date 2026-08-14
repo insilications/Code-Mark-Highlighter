@@ -50,6 +50,7 @@ declare function acquireVsCodeApi(): VsCodeApi;
         uniqueTags.add(escape(highlight.tag));
       }
     }
+    // const tags: string[] = Array.from(uniqueTags).sort();
     const tags: string[] = Array.from(uniqueTags);
     tags.sort();
 
