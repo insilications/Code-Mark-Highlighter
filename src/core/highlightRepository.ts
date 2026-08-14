@@ -1,7 +1,6 @@
 import type * as vscode from "vscode";
 
 import { saveHighlights } from "../extension/storage";
-import { compareFilePathsForDisplay, createHighlightViewModels } from "../webviewProjection";
 import {
   insertHighlightSorted,
   rangesEqual,
@@ -10,6 +9,7 @@ import {
 } from "./highlightUtils";
 import { deserializeHighlightStore, serializeHighlightStore } from "./serialization";
 import type { FileHighlights, FileHighlightsViewModel, Highlight, HighlightStore } from "./types";
+import { compareFilePathsForDisplay, createHighlightViewModels } from "./webviewProjection";
 
 /**
  * Owns the mutable runtime highlight state and, more importantly, its invariants.

@@ -8,10 +8,9 @@ import {
   webViewReadyNotificationType,
 } from "../src/core/messenger-types";
 import type { FileHighlightsViewModel, HighlightViewModel } from "../src/core/types";
-import { hexToRgba } from "../src/core/utils";
 
 import "./mainWebView.css";
-import { esc } from "./utils";
+import { escape, hexToRgba } from "./utils";
 
 declare function acquireVsCodeApi(): VsCodeApi;
 
@@ -60,7 +59,7 @@ declare function acquireVsCodeApi(): VsCodeApi;
 
     for (const file of fileHighlightsViewModel) {
       for (const highlight of file.highlights) {
-        uniqueTags.add(esc(highlight.tag));
+        uniqueTags.add(escape(highlight.tag));
       }
     }
     const tags: string[] = Array.from(uniqueTags);
@@ -348,14 +347,14 @@ declare function acquireVsCodeApi(): VsCodeApi;
   }
 
   function renderCard(filePath: string, highlight: HighlightViewModel): string {
-    const snippet = esc(highlight.codeSnippetDisplay.split("\\n").slice(0, 12).join("\\n"));
-    const fileName = esc(filePath);
-    const tagColor = esc(highlight.color);
+    const snippet = escape(highlight.codeSnippetDisplay.split("\\n").slice(0, 12).join("\\n"));
+    const fileName = escape(filePath);
+    const tagColor = escape(highlight.color);
     const tagBg = hexToRgba(highlight.color, 0.18);
 
-    return `<div class="card" data-id="${esc(highlight.id)}" style="border: 1px solid ${tagColor};">
+    return `<div class="card" data-id="${escape(highlight.id)}" style="border: 1px solid ${tagColor};">
       <div class="card-top">
-        ${highlight.tag ? `<span class="card-tag" style="background:${tagBg};color:${tagColor}">${esc(highlight.tag)}</span>` : ""}
+        ${highlight.tag ? `<span class="card-tag" style="background:${tagBg};color:${tagColor}">${escape(highlight.tag)}</span>` : ""}
         <div class="card-actions">
           <button class="btn btn-jump">↗ Jump</button>
           <button class="btn btn-tag">🏷 Tag</button>

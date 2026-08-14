@@ -15,7 +15,7 @@ import {
   webViewReadyNotificationType,
 } from "../core/messenger-types";
 import type { FileHighlightsViewModel, Highlight, IJumpToHighlightParams } from "../core/types";
-import { applyHighlightsToEditor } from "../decorationManager";
+import { applyHighlightsToEditor } from "./decorationManager";
 import { jumpToHighlight } from "./highlightNavigator";
 import { getWorkspaceRelativePath } from "./storage";
 import { getFuzzyThreshold } from "./utils";

@@ -4,8 +4,8 @@ import { Messenger, type MessengerDiagnostic } from "vscode-messenger";
 import { ACTIVATED_CONTEXT } from "../core/constants";
 import { HighlightRepository } from "../core/highlightRepository";
 import type { HighlightStore } from "../core/types";
-import { disposeAllDecorations } from "../decorationManager";
 import { highlightCodeQuick } from "./commands";
+import { disposeAllDecorations } from "./decorationManager";
 import { SidebarProvider } from "./sidebarProvider";
 import { loadHighlights } from "./storage";
 

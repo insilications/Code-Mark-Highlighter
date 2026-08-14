@@ -1,3 +1,9 @@
+import crypto from "node:crypto";
+
+export function hashText(text: string): string {
+  return crypto.createHash("sha256").update(text, "utf8").digest("hex");
+}
+
 export function hexToRgba(hex: string, alpha: number): string {
   const clean: string = hex.replace("#", "");
   const r: number = parseInt(clean.slice(0, 2), 16);

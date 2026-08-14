@@ -1,33 +1,6 @@
-import crypto from "node:crypto";
-
 import * as vscode from "vscode";
 
-export function hashText(text: string): string {
-  return crypto.createHash("sha256").update(text, "utf8").digest("hex");
-}
-
-// export function updateHighlightRangesInEditor(
-//   editor: vscode.TextEditor,
-//   highlights: Highlight[],
-//   fuzzyThreshold: number = 0.75,
-// ): Highlight[] {
-//   const updatedHighlights: Highlight[] = [];
-//   for (const h of highlights) {
-//     const range: vscode.Range | null = findRangeInDocument(
-//       editor.document,
-//       h.codeSnippet,
-//       h.codeHash,
-//       fuzzyThreshold,
-//     );
-//     if (!range) {
-//       continue;
-//     }
-
-//     updatedHighlights.push({ ...h, range });
-//   }
-
-//   return updatedHighlights;
-// }
+import { hashText } from "../core/utils";
 
 /**
  * Attempt to find the range in `document` where `snippet` lives. Strategy: 1. Exact text search

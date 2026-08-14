@@ -4,8 +4,8 @@ import { litedent } from "litedent";
 import * as vscode from "vscode";
 
 import type { HighlightRepository } from "../core/highlightRepository";
-import { applyHighlightsToEditor } from "../decorationManager";
-import { hashText } from "../highlightMatcher";
+import { hashText } from "../core/utils";
+import { applyHighlightsToEditor } from "./decorationManager";
 import { SidebarProvider } from "./sidebarProvider";
 
 /** Command: Quick Highlight Code */

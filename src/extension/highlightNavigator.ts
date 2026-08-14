@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 
-import { findRangeInDocument } from "../highlightMatcher";
+import { findRangeInDocument } from "./highlightMatcher";
 
 export async function jumpToHighlight(
   filePath: string,
