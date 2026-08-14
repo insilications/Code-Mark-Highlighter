@@ -1,6 +1,6 @@
 import type { NotificationType } from "vscode-messenger-common";
 
-import type { FileHighlightsViewModel, IJumpToHighlightParams } from "./types";
+import type { FileHighlightsViewModel, IJumpToHighlightParams } from "../types";
 
 // =====================================================================
 // WebView message types — declare once, import on both sides

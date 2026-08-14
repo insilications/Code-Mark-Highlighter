@@ -2,31 +2,21 @@
 import { HOST_EXTENSION } from "vscode-messenger-common";
 import { Messenger, type VsCodeApi } from "vscode-messenger-webview";
 
-import { hexToRgba } from "../src/core/utils";
 import {
   jumpToHighlightNotificationType,
   updateWebViewNotificationType,
   webViewReadyNotificationType,
-} from "../src/messenger-types";
+} from "../src/core/messenger-types";
+import { hexToRgba } from "../src/core/utils";
 import type { FileHighlightsViewModel, HighlightViewModel } from "../src/types";
 
 import "./mainWebView.css";
+import { esc } from "./utils";
 
 declare function acquireVsCodeApi(): VsCodeApi;
 
 // This will be run within the WebView itself and cannot access the main VS Code APIs directly.
 (function (): void {
-  const escapeMap: Record<string, string> = {
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    '"': "&quot;",
-    "'": "&#039;",
-  };
-
-  // A single regex that matches any of the target characters for the `esc` function.
-  const escapeRegex = /[&<>"']/g;
-
   let fileHighlightsViewModel: FileHighlightsViewModel[] = [];
   const vscode: VsCodeApi = acquireVsCodeApi();
   const messenger = new Messenger(vscode);
@@ -378,21 +368,6 @@ declare function acquireVsCodeApi(): VsCodeApi;
     </div>`;
   }
 
-  // function esc(str: unknown): string {
-  //   return String(str)
-  //     .replace(/&/g, "&amp;")
-  //     .replace(/</g, "&lt;")
-  //     .replace(/>/g, "&gt;")
-  //     .replace(/"/g, "&quot;")
-  //     .replace(/'/g, "&#039;");
-  // }
-
-  function esc(str: unknown): string {
-    const s: string = String(str);
-    // oxlint-disable-next-line typescript/no-non-null-assertion
-    return s.replace(escapeRegex, (match) => escapeMap[match]!);
-  }
-
   messenger.onNotification(
     updateWebViewNotificationType,
     (params: FileHighlightsViewModel[]): void => {
@@ -407,16 +382,6 @@ declare function acquireVsCodeApi(): VsCodeApi;
     },
   );
   messenger.start();
-  // // Receive updates from extension
-  // window.addEventListener('message', (event) => {
-  //   const msg = event.data;
-  //   if (msg.type === 'update') {
-  //     fileHighlightsViewModel = msg.fileHighlightsViewModel ?? {};
-  //     console.log('fileHighlightsViewModel: ', fileHighlightsViewModel);
-  //     rebuildTagFilter();
-  //     render();
-  //   }
-  // });
 
   //Notify extension we're ready
   messenger.sendNotification(webViewReadyNotificationType, HOST_EXTENSION);
