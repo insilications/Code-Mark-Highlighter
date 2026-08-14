@@ -7,18 +7,19 @@ import {
 } from "@core/messenger-types";
 import type { FileHighlightsViewModel, HighlightViewModel } from "@core/types";
 import { HOST_EXTENSION } from "vscode-messenger-common";
-import { Messenger, type VsCodeApi } from "vscode-messenger-webview";
+import { Messenger } from "vscode-messenger-webview";
 
 import "./mainWebView.css";
 import { escape, hexToRgba } from "./utils";
 
-declare function acquireVsCodeApi(): VsCodeApi;
+// declare function acquireVsCodeApi(): VsCodeApi;
 
 // This will be run within the WebView itself and cannot access the main VS Code APIs directly.
-(function (): void {
+((): void => {
   let fileHighlightsViewModel: FileHighlightsViewModel[] = [];
-  const vscode: VsCodeApi = acquireVsCodeApi();
-  const messenger = new Messenger(vscode);
+  // const vscode: VsCodeApi = acquireVsCodeApi();
+  // const messenger = new Messenger(vscode);
+  const messenger = new Messenger();
 
   let searchNeedle: string = "";
   let tagNeedle: string = "";

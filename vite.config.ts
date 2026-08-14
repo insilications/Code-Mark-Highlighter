@@ -142,6 +142,9 @@ export default defineConfig(({ mode }: ConfigEnv): UserConfig => {
 
     publicDir: false,
 
+    css: {
+      transformer: "lightningcss",
+    },
     build: {
       outDir: "out",
       /*
@@ -154,9 +157,10 @@ export default defineConfig(({ mode }: ConfigEnv): UserConfig => {
       target: "esnext",
       modulePreload: false,
       rolldownOptions: {
+        // preserveEntrySignatures: "strict",
         preserveEntrySignatures: isExtension ? "strict" : false,
         platform: isExtension ? "node" : "browser",
-        external: isExtension ? extensionExternal : [],
+        external: isExtension ? extensionExternal : ["acquireVsCodeApi"],
         tsconfig: isExtension ? "./tsconfig.node.json" : "./tsconfig.webview.json",
         output: {
           format: "esm",
