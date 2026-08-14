@@ -6,8 +6,8 @@ import {
   jumpToHighlightNotificationType,
   updateWebViewNotificationType,
   webViewReadyNotificationType,
-} from "../src/core/messenger-types";
-import type { FileHighlightsViewModel, HighlightViewModel } from "../src/core/types";
+} from "../core/messenger-types";
+import type { FileHighlightsViewModel, HighlightViewModel } from "../core/types";
 
 import "./mainWebView.css";
 import { escape, hexToRgba } from "./utils";

@@ -7,7 +7,7 @@ import { defineConfig, type ConfigEnv, type Plugin, type UserConfig } from "vite
 const extensionExternal: (string | RegExp)[] = ["vscode", /^node:/];
 
 const webviewHtmlPath: string = fileURLToPath(
-  new URL("./webview/mainWebView.html", import.meta.url),
+  new URL("./src/webview/mainWebView.html", import.meta.url),
 );
 
 const JS_PLACEHOLDER = "/*JS_CONTENT*/";
@@ -131,7 +131,7 @@ export default defineConfig(({ mode }: ConfigEnv): UserConfig => {
   return {
     input: isExtension
       ? { extension: "src/extension/extension.ts" }
-      : { mainWebView: "webview/mainWebView.ts" },
+      : { mainWebView: "src/webview/mainWebView.ts" },
 
     plugins: isWebview ? [inlineWebviewPlugin()] : [],
 

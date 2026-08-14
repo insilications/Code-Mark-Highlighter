@@ -5,7 +5,7 @@
     "types": ["vite/client"]
   },
   "exclude": ["node_modules"],
-  "include": ["webview/**/*"],
+  "include": ["./src/webview/**/*"],
   "typeAcquisition": { "enable": true },
   "references": [{ "path": "./tsconfig.node.json" }]
 }

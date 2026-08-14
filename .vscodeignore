@@ -4,7 +4,6 @@
 **/*.ts
 !out/**
 src/**
-webview/**
 .gitignore
 node_modules/**
 PUBLISHING_GUIDE.md
