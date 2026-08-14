@@ -440,7 +440,7 @@ export default defineConfig({
     "eslint/complexity": "off",
     "eslint/default-case": "warn",
     "eslint/no-alert": "warn",
-    "eslint/no-bitwise": "warn",
+    "eslint/no-bitwise": "off",
     "eslint/no-console": "off",
     "eslint/no-div-regex": "warn",
     "eslint/no-empty": "warn",

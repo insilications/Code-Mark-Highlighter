@@ -1,6 +1,74 @@
+import { hashText } from "@core/utils";
 import * as vscode from "vscode";
 
-import { hashText } from "../core/utils";
+function getTrigrams(str: string): Set<string> {
+  const s = str.toLowerCase().replace(/\s+/g, " ");
+  const trigrams = new Set<string>();
+  for (let i = 0; i < s.length - 2; i++) {
+    trigrams.add(s.slice(i, i + 3));
+  }
+  return trigrams;
+}
+
+/**
+ * Similarity ratio between two strings using a simple character n-gram approach. Returns a value
+ * between 0 (completely different) and 1 (identical).
+ */
+function similarity(a: string, b: string): number {
+  if (a === b) {
+    return 1;
+  }
+  if (a.length === 0 || b.length === 0) {
+    return 0;
+  }
+
+  // Use trigram similarity for efficiency
+  const trigramsA = getTrigrams(a);
+  const trigramsB = getTrigrams(b);
+
+  if (trigramsA.size === 0 && trigramsB.size === 0) {
+    return 1;
+  }
+  if (trigramsA.size === 0 || trigramsB.size === 0) {
+    return 0;
+  }
+
+  let intersection = 0;
+  for (const t of trigramsA) {
+    if (trigramsB.has(t)) {
+      intersection++;
+    }
+  }
+
+  return (2 * intersection) / (trigramsA.size + trigramsB.size);
+}
+
+function normalizeWhitespace(text: string): string {
+  return text.replace(/\r\n/g, "\n").replace(/[ \t]+/g, " ");
+}
+
+function mapNormalizedToOriginal(original: string, normalizedIdx: number): number {
+  // Walk through original counting normalized characters
+  let normalCount = 0;
+  let i = 0;
+  while (i < original.length && normalCount < normalizedIdx) {
+    const ch = original[i];
+    if (ch === "\r" && original[i + 1] === "\n") {
+      i += 2;
+      normalCount++;
+    } else if (ch === " " || ch === "\t") {
+      // Skip consecutive spaces/tabs (they become one space in normalized)
+      while (i < original.length && (original[i] === " " || original[i] === "\t")) {
+        i++;
+      }
+      normalCount++;
+    } else {
+      i++;
+      normalCount++;
+    }
+  }
+  return i < original.length ? i : -1;
+}
 
 /**
  * Attempt to find the range in `document` where `snippet` lives. Strategy: 1. Exact text search
@@ -106,73 +174,4 @@ export function findRangeInDocument(
   }
 
   return null;
-}
-
-/**
- * Similarity ratio between two strings using a simple character n-gram approach. Returns a value
- * between 0 (completely different) and 1 (identical).
- */
-function similarity(a: string, b: string): number {
-  if (a === b) {
-    return 1;
-  }
-  if (a.length === 0 || b.length === 0) {
-    return 0;
-  }
-
-  // Use trigram similarity for efficiency
-  const trigramsA = getTrigrams(a);
-  const trigramsB = getTrigrams(b);
-
-  if (trigramsA.size === 0 && trigramsB.size === 0) {
-    return 1;
-  }
-  if (trigramsA.size === 0 || trigramsB.size === 0) {
-    return 0;
-  }
-
-  let intersection = 0;
-  for (const t of trigramsA) {
-    if (trigramsB.has(t)) {
-      intersection++;
-    }
-  }
-
-  return (2 * intersection) / (trigramsA.size + trigramsB.size);
-}
-
-function getTrigrams(str: string): Set<string> {
-  const s = str.toLowerCase().replace(/\s+/g, " ");
-  const trigrams = new Set<string>();
-  for (let i = 0; i < s.length - 2; i++) {
-    trigrams.add(s.slice(i, i + 3));
-  }
-  return trigrams;
-}
-
-function normalizeWhitespace(text: string): string {
-  return text.replace(/\r\n/g, "\n").replace(/[ \t]+/g, " ");
-}
-
-function mapNormalizedToOriginal(original: string, normalizedIdx: number): number {
-  // Walk through original counting normalized characters
-  let normalCount = 0;
-  let i = 0;
-  while (i < original.length && normalCount < normalizedIdx) {
-    const ch = original[i];
-    if (ch === "\r" && original[i + 1] === "\n") {
-      i += 2;
-      normalCount++;
-    } else if (ch === " " || ch === "\t") {
-      // Skip consecutive spaces/tabs (they become one space in normalized)
-      while (i < original.length && (original[i] === " " || original[i] === "\t")) {
-        i++;
-      }
-      normalCount++;
-    } else {
-      i++;
-      normalCount++;
-    }
-  }
-  return i < original.length ? i : -1;
 }

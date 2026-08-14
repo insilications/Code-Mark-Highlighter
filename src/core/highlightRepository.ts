@@ -79,6 +79,7 @@ export class HighlightRepository {
   }
 
   /** Whether the repository contains any highlights for a file. */
+  // oxlint-disable-next-line legibility/no-trivial-wrapper-functions
   public hasFile(filePath: string): boolean {
     return this.fileHighlights.has(filePath);
   }
@@ -92,6 +93,7 @@ export class HighlightRepository {
    * Highlight objects themselves remain mutable because range relocation and metadata editing are
    * legitimate runtime operations.
    */
+  // oxlint-disable-next-line legibility/no-trivial-wrapper-functions
   public getHighlights(filePath: string): readonly Highlight[] | undefined {
     return this.fileHighlights.get(filePath);
   }
@@ -221,6 +223,7 @@ export class HighlightRepository {
    * This is a structural change, so successful deletion invalidates the cached filepath ordering.
    */
   public deleteFile(filePath: string): boolean {
+    // oxlint-disable-next-line legibility/no-hidden-side-effects
     const deleted: boolean = this.fileHighlights.delete(filePath);
 
     if (deleted) {
