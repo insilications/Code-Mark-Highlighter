@@ -28,6 +28,14 @@ export default defineConfig({
   },
   jsxBracketSameLine: false,
   objectWrap: "preserve",
+  overrides: [
+    {
+      files: ["*.json", "*.jsonc"],
+      options: {
+        trailingComma: "none",
+      },
+    },
+  ],
   printWidth: 100,
   proseWrap: "preserve",
   semi: true,
@@ -38,12 +46,4 @@ export default defineConfig({
   tabWidth: 2,
   trailingComma: "all",
   useTabs: false,
-  overrides: [
-    {
-      files: ["*.json", "*.jsonc"],
-      options: {
-        trailingComma: "none",
-      },
-    },
-  ],
 });
