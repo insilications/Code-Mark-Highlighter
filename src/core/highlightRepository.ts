@@ -1,5 +1,6 @@
-import { saveHighlights } from "@extension/storage";
 import type * as vscode from "vscode";
+
+import { saveHighlights } from "@/extension/storage";
 
 import {
   insertHighlightSorted,

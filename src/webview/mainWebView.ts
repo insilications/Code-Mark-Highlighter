@@ -1,17 +1,18 @@
 // oxlint-disable legibility/no-quadratic-patterns max-depth legibility/max-control-flow-depth
 
-import {
-  jumpToHighlightNotificationType,
-  updateWebViewNotificationType,
-  webViewReadyNotificationType,
-} from "@core/messenger-types";
-import type { FileHighlightsViewModel, HighlightViewModel } from "@core/types";
 import { HOST_EXTENSION } from "vscode-messenger-common";
 import type { VsCodeApi } from "vscode-messenger-webview";
 import { Messenger } from "vscode-messenger-webview";
 
+import {
+  jumpToHighlightNotificationType,
+  updateWebViewNotificationType,
+  webViewReadyNotificationType,
+} from "@/core/messenger-types";
+import type { FileHighlightsViewModel, HighlightViewModel } from "@/core/types";
+
 import "./mainWebView.css";
-import { escape, hexToRgba } from "./utils";
+import { esc, hexToRgba } from "./utils";
 
 declare function acquireVsCodeApi(): VsCodeApi;
 
@@ -48,7 +49,7 @@ declare function acquireVsCodeApi(): VsCodeApi;
 
     for (const file of fileHighlightsViewModel) {
       for (const highlight of file.highlights) {
-        uniqueTags.add(escape(highlight.tag));
+        uniqueTags.add(esc(highlight.tag));
       }
     }
     // const tags: string[] = Array.from(uniqueTags).sort();
@@ -207,14 +208,14 @@ declare function acquireVsCodeApi(): VsCodeApi;
   }
 
   function renderCard(filePath: string, highlight: HighlightViewModel): string {
-    const snippet = escape(highlight.codeSnippetDisplay.split("\\n").slice(0, 12).join("\\n"));
-    const fileName = escape(filePath);
-    const tagColor = escape(highlight.color);
+    const snippet = esc(highlight.codeSnippetDisplay.split("\\n").slice(0, 12).join("\\n"));
+    const fileName = esc(filePath);
+    const tagColor = esc(highlight.color);
     const tagBg = hexToRgba(highlight.color, 0.18);
 
-    return `<div class="card" data-id="${escape(highlight.id)}" style="border: 1px solid ${tagColor};">
+    return `<div class="card" data-id="${esc(highlight.id)}" style="border: 1px solid ${tagColor};">
       <div class="card-top">
-        ${highlight.tag ? `<span class="card-tag" style="background:${tagBg};color:${tagColor}">${escape(highlight.tag)}</span>` : ""}
+        ${highlight.tag ? `<span class="card-tag" style="background:${tagBg};color:${tagColor}">${esc(highlight.tag)}</span>` : ""}
         <div class="card-actions">
           <button class="btn btn-jump">↗ Jump</button>
           <button class="btn btn-tag">🏷 Tag</button>

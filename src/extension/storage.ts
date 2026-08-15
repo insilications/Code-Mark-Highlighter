@@ -1,10 +1,11 @@
 import fs from "node:fs";
 import path from "node:path";
 
-import { HIGHLIGHT_STORE_VERSION } from "@core/constants";
-import { serializeHighlightStore } from "@core/serialization";
-import type { FileHighlights, HighlightStore } from "@core/types";
 import * as vscode from "vscode";
+
+import { HIGHLIGHT_STORE_VERSION } from "@/core/constants";
+import { serializeHighlightStore } from "@/core/serialization";
+import type { FileHighlights, HighlightStore } from "@/core/types";
 
 export function getWorkspaceRelativePath(uri: vscode.Uri): string {
   const workspaceFolders: readonly vscode.WorkspaceFolder[] | undefined =

@@ -1,9 +1,9 @@
 {
   "compilerOptions": {
     "paths": {
-      "@extension/*": ["./src/extension/*"],
-      "@core/*": ["./src/core/*"],
-      "@webview/*": ["./src/webview/*"]
+      "@/extension/*": ["./src/extension/*"],
+      "@/core/*": ["./src/core/*"],
+      "@/webview/*": ["./src/webview/*"]
     },
     "allowArbitraryExtensions": true,
     "allowImportingTsExtensions": true,

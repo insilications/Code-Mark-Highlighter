@@ -1,5 +1,6 @@
-import { hashText } from "@core/utils";
 import * as vscode from "vscode";
+
+import { hashText } from "@/core/utils";
 
 function getTrigrams(str: string): Set<string> {
   const s = str.toLowerCase().replace(/\s+/g, " ");
@@ -118,6 +119,7 @@ export function findRangeInDocument(
 
   // Search in blocks: use line-granularity to find candidate regions
   const snippetLines: string[] = snippet.split("\n");
+  // oxlint-disable-next-line typescript/no-non-null-assertion
   const firstLine: string = snippetLines[0]!.trim();
   // const lastLine: string = snippetLines[snippetLines.length - 1].trim();
 

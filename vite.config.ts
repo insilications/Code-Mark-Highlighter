@@ -13,6 +13,10 @@ const webviewHtmlPath: string = fileURLToPath(
 const JS_PLACEHOLDER = "/*JS_CONTENT*/";
 const CSS_PLACEHOLDER = "/*CSS_CONTENT*/";
 
+const extensionPath: string = fileURLToPath(new URL("./src/extension", import.meta.url));
+const corePath: string = fileURLToPath(new URL("./src/core", import.meta.url));
+const webviewPath: string = fileURLToPath(new URL("./src/webview", import.meta.url));
+
 /**
  * Replaces exactly one occurrence of `placeholder` in `source`.
  *
@@ -132,7 +136,11 @@ export default defineConfig(({ mode }: ConfigEnv): UserConfig => {
 
   return {
     resolve: {
-      tsconfigPaths: true,
+      alias: {
+        "@/extension": extensionPath,
+        "@/core": corePath,
+        "@/webview": webviewPath,
+      },
     },
     input: isExtension
       ? { extension: "src/extension/extension.ts" }

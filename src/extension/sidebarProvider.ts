@@ -2,18 +2,19 @@
 
 import fs from "node:fs";
 
-import type { HighlightRepository } from "@core/highlightRepository";
+import * as vscode from "vscode";
+import type { Messenger } from "vscode-messenger";
+import type { WebviewIdMessageParticipant } from "vscode-messenger-common";
+
+import type { HighlightRepository } from "@/core/highlightRepository";
 import {
   jumpToHighlightNotificationType,
   refreshActiveEditorNotificationType,
   updateWebViewNotificationType,
   webViewReadyNotificationType,
-} from "@core/messenger-types";
-import type { FileHighlightsViewModel, Highlight, IJumpToHighlightParams } from "@core/types";
-import { getNonce } from "@core/utils";
-import * as vscode from "vscode";
-import type { Messenger } from "vscode-messenger";
-import type { WebviewIdMessageParticipant } from "vscode-messenger-common";
+} from "@/core/messenger-types";
+import type { FileHighlightsViewModel, Highlight, IJumpToHighlightParams } from "@/core/types";
+import { getNonce } from "@/core/utils";
 
 import { applyHighlightsToEditor } from "./decorationManager";
 import { jumpToHighlight } from "./highlightNavigator";

@@ -73,6 +73,7 @@
       "enabled": false
     },
     "globals": [
+      "vscode",
       "chrome",
       "onanimationend",
       "onabortpayment",
@@ -288,14 +289,17 @@
         "noSelfAssign": "error",
         "noSetterReturn": "error",
         "noSwitchDeclarations": "error",
+        "noUndeclaredDependencies": "off",
         "noUndeclaredVariables": "error",
         "noUnreachable": "error",
         "noUnreachableSuper": "error",
+        "noUnresolvedImports": "off",
         "noUnsafeFinally": "error",
         "noUnsafeOptionalChaining": "error",
         "noUnusedLabels": "error",
         "noUnusedPrivateClassMembers": "error",
         "noUnusedVariables": "error",
+        "useImportExtensions": "off",
         "useIsNan": "error",
         "useValidForDirection": "error",
         "useValidTypeof": "error",
@@ -309,9 +313,9 @@
       "preset": "recommended",
       "style": {
         "noCommonJs": "error",
-        "noInferrableTypes": "error",
+        "noInferrableTypes": "off",
         "noNamespace": "error",
-        "noNonNullAssertion": "error",
+        "noNonNullAssertion": "off",
         "useArrayLiterals": "error",
         "useAsConstAssertion": "error",
         "useConsistentArrayType": "error",
@@ -377,6 +381,18 @@
       }
     }
   },
+  "overrides": [
+    {
+      "assist": {
+        "actions": {
+          "source": {
+            "useSortedKeys": "off"
+          }
+        }
+      },
+      "includes": ["**/*.js", "**/*.ts", "**/*.jsx", "**/*.tsx"]
+    }
+  ],
   "vcs": {
     "clientKind": "git",
     "defaultBranch": "patched",

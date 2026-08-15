@@ -1,12 +1,11 @@
 {
-  "extends": "./tsconfig.shared.json",
   "compilerOptions": {
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.webview.tsbuildinfo",
     "types": ["vite/client"]
   },
   "exclude": ["node_modules"],
+  "extends": "./tsconfig.shared.json",
   "include": ["./src/webview/**/*"],
-  "typeAcquisition": { "enable": true },
-  "references": [{ "path": "./tsconfig.node.json" }]
+  "references": [{ "path": "./tsconfig.node.json" }],
+  "typeAcquisition": { "enable": true }
 }
-  

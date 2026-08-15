@@ -1,15 +1,15 @@
 const escapeMap: Record<string, string> = {
+  "'": "&#x27;",
+  '"': "&quot;",
   "&": "&amp;",
   "<": "&lt;",
   ">": "&gt;",
-  '"': "&quot;",
-  "'": "&#x27;",
 };
 
 // A single regex that matches any of the target characters for the `esc` function.
 const escapeRegex = /[&<>"']/g;
 
-export function escape(str: unknown): string {
+export function esc(str: unknown): string {
   const s: string = String(str);
   // oxlint-disable-next-line typescript/no-non-null-assertion
   return s.replace(escapeRegex, (match) => escapeMap[match]!);

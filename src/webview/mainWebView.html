@@ -3,10 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta
-      http-equiv="Content-Security-Policy"
       content="default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-#NNNN#';"
+      http-equiv="Content-Security-Policy"
     />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
     <title>Code Mark Highlighter</title>
     <style nonce="#NNNN#">
       /*CSS_CONTENT*/
@@ -22,7 +22,7 @@
 
     <!-- Filter Bar -->
     <div class="filter-bar">
-      <input id="search" type="text" placeholder="Search tags, code…" />
+      <input id="search" placeholder="Search tags, code…" type="text" />
       <select id="filter-tag">
         <option value="">All tags</option>
       </select>
@@ -46,7 +46,7 @@
       <span id="stat-files">0 files</span>
     </div>
 
-    <script type="module" nonce="#NNNN#">
+    <script nonce="#NNNN#" type="module">
       /*JS_CONTENT*/
     </script>
   </body>
