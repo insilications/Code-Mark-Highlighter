@@ -2,6 +2,7 @@
   "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
   "assist": {
     "actions": {
+      "preset": "recommended",
       "recommended": true,
       "source": {
         "noDuplicateClasses": "on",
@@ -310,7 +311,11 @@
         "noUnnecessaryTemplateExpression": "error",
         "useReduceTypeParameter": "error"
       },
-      "preset": "recommended",
+      // "performance": "warn",
+      "performance": {
+        "noDelete": "error"
+      },
+      "preset": "all",
       "style": {
         "noCommonJs": "error",
         "noInferrableTypes": "off",

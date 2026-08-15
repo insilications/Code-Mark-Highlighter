@@ -36,6 +36,7 @@ try {
       "style",
       "suspicious",
     ],
+    additionalProperties: false,
   };
   for (const [ruleCategory, ruleCategoryValue] of Object.entries(linterRules)) {
     if (!["preset", "recommended"].includes(ruleCategory)) {
@@ -47,7 +48,12 @@ try {
       // console.log(`${ruleCategory}: `, rulesInCategory);
       console.log(`\n\n\n\n\n============================`);
       console.log(`${ruleCategory}: `);
-      rules["properties"][ruleCategory] = { type: "object", required: [], properties: {} };
+      rules["properties"][ruleCategory] = {
+        type: "object",
+        required: [],
+        properties: {},
+        additionalProperties: false,
+      };
       for (const [rule, ruleValue] of Object.entries(rulesInCategory)) {
         if (!["preset", "recommended"].includes(rule)) {
           const description = ruleValue.description;
@@ -58,12 +64,14 @@ try {
           // rules["properties"][ruleCategory][rule]= {};
           // log(rule);
           // log(rules["properties"]);
-          rules["properties"][ruleCategory]["properties"][rule] = {
-            type: "object",
-            description,
-            properties: structuredClone(ruleValue.anyOf[0].oneOf[1]),
-            required: [],
-          };
+          rules["properties"][ruleCategory]["properties"][rule] = structuredClone(ruleValue.anyOf[0].oneOf[1]);
+          // rules["properties"][ruleCategory]["properties"][rule] = {
+          //   type: "object",
+          //   description,
+          //   properties: structuredClone(ruleValue.anyOf[0].oneOf[1]),
+          //   required: [],
+          //   additionalProperties: false,
+          // };
           // rules[ruleCategory][rule] = {
           //   description,
           //   properties: structuredClone(ruleValue.anyOf[0].oneOf[1]),
