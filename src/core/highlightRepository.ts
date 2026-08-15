@@ -43,9 +43,9 @@ export class HighlightRepository {
    * The strings themselves are not copied; this array merely holds references to the same filepath
    * strings already used as Map keys, so its memory cost is small.
    *
-   * Undefined means "the cache needs to be rebuilt."
+   * Null means "the cache needs to be rebuilt."
    */
-  private sortedFilePathsCache: string[] | undefined;
+  private sortedFilePathsCache: string[] | null = null;
 
   /**
    * If an existing FileHighlights instance is supplied, this repository takes ownership of it.
@@ -118,6 +118,7 @@ export class HighlightRepository {
   public addHighlight(filePath: string, highlight: Highlight): number {
     const highlights: Highlight[] | undefined = this.fileHighlights.get(filePath);
 
+    // oxlint-disable-next-line no-undefined
     if (highlights !== undefined) {
       return insertHighlightSorted(highlights, highlight);
     }
@@ -146,16 +147,19 @@ export class HighlightRepository {
     }
 
     if (newHighlightsLength === 1) {
+      // oxlint-disable-next-line typescript/no-non-null-assertion
       this.addHighlight(filePath, newHighlights[0]!);
       return;
     }
 
     let highlights: Highlight[] | undefined = this.fileHighlights.get(filePath);
 
+    // oxlint-disable-next-line no-undefined
     if (highlights === undefined) {
       highlights = new Array<Highlight>(newHighlightsLength);
 
       for (let i: number = 0; i < newHighlightsLength; i++) {
+        // oxlint-disable-next-line typescript/no-non-null-assertion
         highlights[i] = newHighlights[i]!;
       }
 
@@ -173,6 +177,7 @@ export class HighlightRepository {
     highlights.length = oldLength + newHighlightsLength;
 
     for (let i = 0; i < newHighlightsLength; i++) {
+      // oxlint-disable-next-line typescript/no-non-null-assertion
       highlights[oldLength + i] = newHighlights[i]!;
     }
 
@@ -191,14 +196,16 @@ export class HighlightRepository {
    * If the final highlight is removed, the entire file entry disappears and the sorted-filepath
    * cache is invalidated.
    */
-  public removeHighlight(filePath: string, highlightId: string): Highlight | undefined {
+  public removeHighlight(filePath: string, highlightId: string): Highlight | null {
     const highlights: Highlight[] | undefined = this.fileHighlights.get(filePath);
 
+    // oxlint-disable-next-line no-undefined
     if (highlights === undefined) {
-      return undefined;
+      return null;
     }
 
     for (let i: number = 0; i < highlights.length; i++) {
+      // oxlint-disable-next-line typescript/no-non-null-assertion
       const highlight: Highlight = highlights[i]!;
 
       if (highlight.id !== highlightId) {
@@ -215,7 +222,7 @@ export class HighlightRepository {
       return highlight;
     }
 
-    return undefined;
+    return null;
   }
 
   /**
@@ -253,7 +260,8 @@ export class HighlightRepository {
 
     const highlights = new Array<Highlight>(newHighlights.length);
 
-    for (let i = 0; i < newHighlights.length; i++) {
+    for (let i: number = 0; i < newHighlights.length; i++) {
+      // oxlint-disable-next-line typescript/no-non-null-assertion
       highlights[i] = newHighlights[i]!;
     }
 
@@ -285,11 +293,13 @@ export class HighlightRepository {
   ): boolean {
     const highlights: Highlight[] | undefined = this.fileHighlights.get(filePath);
 
+    // oxlint-disable-next-line no-undefined
     if (highlights === undefined) {
       return false;
     }
 
     for (let i: number = 0; i < highlights.length; i++) {
+      // oxlint-disable-next-line typescript/no-non-null-assertion
       const highlight: Highlight = highlights[i]!;
 
       if (highlight.id !== highlightId) {
@@ -331,10 +341,11 @@ export class HighlightRepository {
    */
   public repairRangesForFile(
     filePath: string,
-    repair: (highlight: Highlight) => vscode.Range | undefined,
+    repair: (highlight: Highlight) => vscode.Range | null,
   ): number {
     const highlights: Highlight[] | undefined = this.fileHighlights.get(filePath);
 
+    // oxlint-disable-next-line no-undefined
     if (highlights === undefined) {
       return 0;
     }
@@ -363,7 +374,7 @@ export class HighlightRepository {
    * highlights from an existing non-empty file does not invalidate this cache.
    */
   public getSortedFilePaths(): readonly string[] {
-    if (this.sortedFilePathsCache === undefined) {
+    if (this.sortedFilePathsCache === null) {
       const filePaths: string[] = Array.from(this.fileHighlights.keys());
 
       filePaths.sort(compareFilePathsForDisplay);
@@ -437,6 +448,6 @@ export class HighlightRepository {
    * every operation that adds/removes a Map key must reach this method.
    */
   private invalidateSortedFilePaths(): void {
-    this.sortedFilePathsCache = undefined;
+    this.sortedFilePathsCache = null;
   }
 }

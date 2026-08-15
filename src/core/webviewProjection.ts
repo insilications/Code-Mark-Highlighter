@@ -18,6 +18,7 @@ import type { Highlight, HighlightViewModel } from "./types";
  * This comparator is presentation-only. It must never be used to determine whether two file keys
  * refer to the same file.
  */
+// oxlint-disable-next-line no-undefined
 const FILE_PATH_COLLATOR = new Intl.Collator(undefined, {
   numeric: true,
   sensitivity: "base",

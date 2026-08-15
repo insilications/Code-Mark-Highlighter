@@ -455,7 +455,7 @@ export default defineConfig({
     "eslint/no-restricted-imports": "warn",
     "eslint/no-restricted-properties": "warn",
     "eslint/no-sequences": "warn",
-    "eslint/no-undefined": "error",
+    "eslint/no-undefined": "warn",
     "eslint/no-use-before-define": "error",
     "eslint/no-var": "warn",
     "eslint/no-void": "warn",

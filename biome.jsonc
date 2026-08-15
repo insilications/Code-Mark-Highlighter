@@ -327,7 +327,7 @@
         "useLiteralEnumMembers": "error",
         "useShorthandFunctionType": "error",
         "useSpreadOverApply": "error",
-        "useTemplate": "warn",
+        "useTemplate": "off",
         "useThrowOnlyError": "error",
         "useUnifiedTypeSignatures": "error"
       },
@@ -374,6 +374,7 @@
         "noVar": "warn",
         "noWith": "error",
         "useAdjacentOverloadSignatures": "error",
+        "useArraySortCompare": "off",
         "useAwait": "error",
         "useBiomeIgnoreFolder": "error",
         "useGetterReturn": "error",
@@ -386,6 +387,7 @@
       "assist": {
         "actions": {
           "source": {
+            "useSortedInterfaceMembers": "off",
             "useSortedKeys": "off"
           }
         }

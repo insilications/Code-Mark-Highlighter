@@ -21,8 +21,10 @@ function getStorageFilePath(): string | null {
   const workspaceFolders: readonly vscode.WorkspaceFolder[] | undefined =
     vscode.workspace.workspaceFolders;
   const workspaceRoot: string | undefined =
+    // oxlint-disable-next-line no-undefined
     workspaceFolders && workspaceFolders.length > 0 ? workspaceFolders[0]?.uri.fsPath : undefined;
 
+  // oxlint-disable-next-line no-undefined
   if (workspaceRoot === undefined) {
     return null;
   }

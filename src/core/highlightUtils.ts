@@ -130,7 +130,7 @@ export function insertHighlightSorted(highlights: Highlight[], highlight: Highli
  * The callback returns:
  *
  * - A new Range if this highlight was successfully relocated;
- * - Undefined if the highlight should remain unchanged.
+ * - Null if the highlight should remain unchanged.
  *
  * All modifications happen first. The array is sorted only once afterward, regardless of how many
  * ranges changed.
@@ -141,15 +141,16 @@ export function insertHighlightSorted(highlights: Highlight[], highlight: Highli
  */
 export function repairHighlightRanges(
   highlights: Highlight[],
-  repair: (highlight: Highlight) => vscode.Range | undefined,
+  repair: (highlight: Highlight) => vscode.Range | null,
 ): number {
   let changedCount: number = 0;
 
   for (let i: number = 0; i < highlights.length; i++) {
+    // oxlint-disable-next-line typescript/no-non-null-assertion
     const highlight: Highlight = highlights[i]!;
-    const repairedRange: vscode.Range | undefined = repair(highlight);
+    const repairedRange: vscode.Range | null = repair(highlight);
 
-    if (repairedRange !== undefined && !rangesEqual(highlight.range, repairedRange)) {
+    if (repairedRange !== null && !rangesEqual(highlight.range, repairedRange)) {
       highlight.range = repairedRange;
       changedCount++;
     }

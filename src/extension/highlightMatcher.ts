@@ -50,23 +50,22 @@ function normalizeWhitespace(text: string): string {
 
 function mapNormalizedToOriginal(original: string, normalizedIdx: number): number {
   // Walk through original counting normalized characters
-  let normalCount = 0;
-  let i = 0;
+  let normalCount: number = 0;
+  let i: number = 0;
   while (i < original.length && normalCount < normalizedIdx) {
-    const ch = original[i];
+    const ch: string | undefined = original[i];
     if (ch === "\r" && original[i + 1] === "\n") {
       i += 2;
-      normalCount++;
     } else if (ch === " " || ch === "\t") {
       // Skip consecutive spaces/tabs (they become one space in normalized)
+      // oxlint-disable-next-line legibility/no-quadratic-patterns
       while (i < original.length && (original[i] === " " || original[i] === "\t")) {
         i++;
       }
-      normalCount++;
     } else {
       i++;
-      normalCount++;
     }
+    normalCount++;
   }
   return i < original.length ? i : -1;
 }
@@ -129,9 +128,9 @@ export function findRangeInDocument(
 
   // Find candidate starting lines
   let bestRange: vscode.Range | null = null;
-  let bestScore = 0;
+  let bestScore: number = 0;
 
-  for (let lineIdx = 0; lineIdx < document.lineCount; lineIdx++) {
+  for (let lineIdx: number = 0; lineIdx < document.lineCount; lineIdx++) {
     const lineText: string = document.lineAt(lineIdx).text.trim();
 
     // Quick filter: first line must be at least 60% similar

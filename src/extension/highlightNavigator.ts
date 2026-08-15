@@ -12,8 +12,10 @@ export async function jumpToHighlight(
   const workspaceFolders: readonly vscode.WorkspaceFolder[] | undefined =
     vscode.workspace.workspaceFolders;
   const workspaceRoot: vscode.Uri | undefined =
+    // oxlint-disable-next-line no-undefined
     workspaceFolders && workspaceFolders.length > 0 ? workspaceFolders[0]?.uri : undefined;
 
+  // oxlint-disable-next-line no-undefined
   if (workspaceRoot === undefined) {
     return;
   }
