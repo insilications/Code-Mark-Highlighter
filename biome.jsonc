@@ -687,7 +687,7 @@
         // Prefer .textContent over .innerText for DOM node text. See https://biomejs.dev/linter/rules/use-dom-node-text-content
         "useDomNodeTextContent": "on",
         // Prefer querySelector() and querySelectorAll() over older DOM query APIs. See https://biomejs.dev/linter/rules/use-dom-query-selector
-        "useDomQuerySelector": "on",
+        "useDomQuerySelector": "off",
         // Require switch-case statements to be exhaustive. See https://biomejs.dev/linter/rules/use-exhaustive-switch-cases
         "useExhaustiveSwitchCases": "on",
         // Ensure that test functions contain at least one expect() or similar assertion. See https://biomejs.dev/linter/rules/use-expect

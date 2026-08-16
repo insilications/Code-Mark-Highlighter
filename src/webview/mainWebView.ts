@@ -16,6 +16,17 @@ import { esc, hexToRgba } from "./utils";
 
 declare function acquireVsCodeApi(): VsCodeApi;
 
+const CARD_LIST_NO_HIGHLIGHTS_HTML: string = `<div class="empty">
+          <div class="empty-icon">✨</div>
+          <div class="empty-title">No highlights yet</div>
+          <div class="empty-sub">Select code → right-click<br>→ <strong>Code Mark: Highlight Code</strong></div>
+        </div>`;
+const CARD_LIST_NO_RESULTS_HTML: string = `<div class="empty">
+          <div class="empty-icon">🔍</div>
+          <div class="empty-title">No results</div>
+          <div class="empty-sub">Try a different search or filter.</div>
+        </div>`;
+
 // This will be run within the WebView itself and cannot access the main VS Code APIs directly.
 ((): void => {
   let fileHighlightsViewModel: FileHighlightsViewModel[] = [];
@@ -26,15 +37,19 @@ declare function acquireVsCodeApi(): VsCodeApi;
   let tagNeedle: string = "";
 
   // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-  const listEl: HTMLDivElement = document.getElementById("list") as HTMLDivElement;
+  const cardListElement: HTMLDivElement = document.getElementById("list") as HTMLDivElement;
   // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-  const countEl: HTMLSpanElement = document.getElementById("count") as HTMLSpanElement;
+  const cardCountElement: HTMLSpanElement = document.getElementById("count") as HTMLSpanElement;
   // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-  const statsBar: HTMLDivElement = document.getElementById("stats-bar") as HTMLDivElement;
+  const statsBarElement: HTMLDivElement = document.getElementById("stats-bar") as HTMLDivElement;
   // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-  const statTotal: HTMLSpanElement = document.getElementById("stat-total") as HTMLSpanElement;
+  const statsTotalElement: HTMLSpanElement = document.getElementById(
+    "stat-total",
+  ) as HTMLSpanElement;
   // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-  const statFiles: HTMLSpanElement = document.getElementById("stat-files") as HTMLSpanElement;
+  const statsFilesElement: HTMLSpanElement = document.getElementById(
+    "stat-files",
+  ) as HTMLSpanElement;
 
   // oxlint-disable-next-line typescript/no-non-null-assertion typescript/no-unsafe-type-assertion
   const filterTagEl: HTMLSelectElement = document.getElementById(
@@ -98,7 +113,7 @@ declare function acquireVsCodeApi(): VsCodeApi;
    */
   function filterFileHighlights(): FileHighlightsViewModel[] {
     // Nothing to filter.
-    if (!tagNeedle && !searchNeedle) {
+    if (!(tagNeedle || searchNeedle)) {
       return fileHighlightsViewModel;
     }
 
@@ -145,7 +160,7 @@ declare function acquireVsCodeApi(): VsCodeApi;
           continue;
         }
 
-        const highlights = file.highlights;
+        const highlights: HighlightViewModel[] = file.highlights;
         const matches: HighlightViewModel[] = [];
 
         for (let j: number = 0; j < highlights.length; j++) {
@@ -157,8 +172,7 @@ declare function acquireVsCodeApi(): VsCodeApi;
           }
         }
 
-        // oxlint-disable-next-line unicorn/explicit-length-check
-        if (matches.length !== 0) {
+        if (matches.length > 0) {
           result.push({
             ...file,
             highlights: matches,
@@ -194,8 +208,7 @@ declare function acquireVsCodeApi(): VsCodeApi;
         }
       }
 
-      // oxlint-disable-next-line unicorn/explicit-length-check
-      if (matches.length !== 0) {
+      if (matches.length > 0) {
         result.push({
           ...file,
           highlights: matches,
@@ -230,23 +243,15 @@ declare function acquireVsCodeApi(): VsCodeApi;
   function render(): void {
     const filteredFileHighlights: FileHighlightsViewModel[] = filterFileHighlights();
     // oxlint-disable-next-line prefer-template
-    countEl.textContent = "" + filteredFileHighlights.length;
+    cardCountElement.textContent = "" + filteredFileHighlights.length;
 
     if (filteredFileHighlights.length === 0) {
       if (fileHighlightsViewModel.length === 0) {
-        listEl.innerHTML = `<div class="empty">
-          <div class="empty-icon">✨</div>
-          <div class="empty-title">No highlights yet</div>
-          <div class="empty-sub">Select code → right-click<br>→ <strong>Code Mark: Highlight Code</strong></div>
-        </div>`;
+        cardListElement.innerHTML = CARD_LIST_NO_HIGHLIGHTS_HTML;
       } else {
-        listEl.innerHTML = `<div class="empty">
-          <div class="empty-icon">🔍</div>
-          <div class="empty-title">No results</div>
-          <div class="empty-sub">Try a different search or filter.</div>
-        </div>`;
+        cardListElement.innerHTML = CARD_LIST_NO_RESULTS_HTML;
       }
-      statsBar.style.display = "none";
+      statsBarElement.style.display = "none";
       return;
     }
 
@@ -259,7 +264,7 @@ declare function acquireVsCodeApi(): VsCodeApi;
       }
     }
 
-    listEl.innerHTML = renderedCards.join("");
+    cardListElement.innerHTML = renderedCards.join("");
 
     // Stats
     const uniqueFiles = new Set(filteredFileHighlights.map((h) => h.filePath)).size;
@@ -267,12 +272,12 @@ declare function acquireVsCodeApi(): VsCodeApi;
       (acc, fh) => acc + fh.highlights.length,
       0,
     );
-    statTotal.textContent = `${totalHighlights} highlight${totalHighlights === 1 ? "" : "s"}`;
-    statFiles.textContent = `${uniqueFiles} file${uniqueFiles === 1 ? "" : "s"}`;
-    statsBar.style.display = "flex";
+    statsTotalElement.textContent = `${totalHighlights} highlight${totalHighlights === 1 ? "" : "s"}`;
+    statsFilesElement.textContent = `${uniqueFiles} file${uniqueFiles === 1 ? "" : "s"}`;
+    statsBarElement.style.display = "flex";
 
     // Bind card events
-    const renderedCardsList: NodeListOf<HTMLDivElement> = listEl.querySelectorAll(".card");
+    const renderedCardsList: NodeListOf<HTMLDivElement> = cardListElement.querySelectorAll(".card");
     for (let i: number = 0; i < renderedCardsList.length; i++) {
       // oxlint-disable-next-line typescript/no-non-null-assertion
       const renderedCard: HTMLDivElement = renderedCardsList[i]!;

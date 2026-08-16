@@ -164,11 +164,11 @@ export function findRangeInDocument(
 
   // --- 4. Hash match on lines (handles reformatting) ---
   // Try hashing each line-group of the same size as the snippet lines
-  const snippetLineCount = snippetLines.length;
-  for (let i = 0; i <= document.lineCount - snippetLineCount; i++) {
-    const start = document.lineAt(i).range.start;
-    const end = document.lineAt(i + snippetLineCount - 1).range.end;
-    const block = document.getText(new vscode.Range(start, end));
+  const snippetLineCount: number = snippetLines.length;
+  for (let i: number = 0; i <= document.lineCount - snippetLineCount; i++) {
+    const start: vscode.Position = document.lineAt(i).range.start;
+    const end: vscode.Position = document.lineAt(i + snippetLineCount - 1).range.end;
+    const block: string = document.getText(new vscode.Range(start, end));
     if (hashText(block) === storedHash) {
       return new vscode.Range(start, end);
     }

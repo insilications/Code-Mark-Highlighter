@@ -167,7 +167,7 @@ export interface ColorOption {
 
 type JumpParamsTuple = Parameters<typeof jumpToHighlight>;
 
-export interface IJumpToHighlightParams {
+export interface JumpToHighlightParams {
   filePath: JumpParamsTuple[0];
   codeSnippet: JumpParamsTuple[1];
   codeHash: JumpParamsTuple[2];

@@ -13,7 +13,7 @@ import {
   updateWebViewNotificationType,
   webViewReadyNotificationType,
 } from "@/core/messenger-types";
-import type { FileHighlightsViewModel, Highlight, IJumpToHighlightParams } from "@/core/types";
+import type { FileHighlightsViewModel, Highlight, JumpToHighlightParams } from "@/core/types";
 import { getNonce } from "@/core/utils";
 
 import { applyHighlightsToEditor } from "./decorationManager";
@@ -62,7 +62,7 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
     const disposables: vscode.Disposable[] = [
       this.messenger.onNotification(
         jumpToHighlightNotificationType,
-        async (data: IJumpToHighlightParams): Promise<void> => {
+        async (data: JumpToHighlightParams): Promise<void> => {
           console.log(
             "[Code Mark Highlighter] jumpToHighlightNotificationType - Received request to jump to highlight from WebView: ",
             data,
