@@ -37,6 +37,10 @@ const CARD_LIST_NO_RESULTS_HTML: string = `<div class="empty">
   let tagNeedle: string = "";
 
   // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+  const cardsTemplate: HTMLTemplateElement = document.getElementById(
+    "cards",
+  ) as HTMLTemplateElement;
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion
   const cardListElement: HTMLDivElement = document.getElementById("list") as HTMLDivElement;
   // oxlint-disable-next-line typescript/no-unsafe-type-assertion
   const cardCountElement: HTMLSpanElement = document.getElementById("count") as HTMLSpanElement;
@@ -240,26 +244,50 @@ const CARD_LIST_NO_RESULTS_HTML: string = `<div class="empty">
   //   </div>`;
   // }
 
-  function renderCard(filePath: string, highlight: HighlightViewModel): string {
+  function renderCard(filePath: string, highlight: HighlightViewModel): HTMLDivElement {
     const snippet = esc(highlight.codeSnippetDisplay.split("\\n").slice(0, 12).join("\\n"));
-    const tagName: string = esc(highlight.tag);
+    const id: string = esc(highlight.id);
+    // const tagName: string = esc(highlight.tag);
     const fileName: string = esc(filePath);
     const tagColor: string = esc(highlight.color);
-    const tagBg: string = hexToRgba(highlight.color, 0.18);
+    // const tagBg: string = hexToRgba(highlight.color, 0.18);
+    // cardsTemplate
+    // const newDiv = document.createElement("div");
+    const cardsTemplateClone: Node = cardsTemplate.content.cloneNode(true);
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+    const cardElement: HTMLDivElement = (cardsTemplateClone as DocumentFragment).querySelector(
+      ".card",
+    ) as HTMLDivElement;
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+    const cardFileElement: HTMLSpanElement = cardElement.querySelector(
+      ".card-file",
+    ) as HTMLSpanElement;
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+    const cardSnippetElement: HTMLDivElement = cardElement.querySelector(
+      ".card-snippet",
+    ) as HTMLDivElement;
 
-    return `<div class="card" data-id="${esc(highlight.id)}">
-      <div class="card-top">
-        ${tagName ? `<span class="card-tag">${tagName}</span>` : ""}
-        <div class="card-actions">
-          <button class="btn btn-jump">↗ Jump</button>
-          <button class="btn btn-tag">🏷 Tag</button>
-          <button class="btn btn-color">🎨 Color</button>
-          <button class="btn btn-danger btn-delete">🗑</button>
-        </div>
-        <span class="card-file" title="${fileName}">${fileName}</span>
-      </div>
-      <div class="card-snippet">${snippet}</div>
-    </div>`;
+    cardElement.dataset.id = id;
+    cardElement.style.borderColor = tagColor;
+    cardFileElement.title = fileName;
+    cardFileElement.textContent = fileName;
+    cardSnippetElement.textContent = snippet;
+
+    return cardElement;
+
+    // return `<div class="card" data-id="${esc(highlight.id)}">
+    //   <div class="card-top">
+    //     ${tagName ? `<span class="card-tag">${tagName}</span>` : ""}
+    //     <div class="card-actions">
+    //       <button class="btn btn-jump">↗ Jump</button>
+    //       <button class="btn btn-tag">🏷 Tag</button>
+    //       <button class="btn btn-color">🎨 Color</button>
+    //       <button class="btn btn-danger btn-delete">🗑</button>
+    //     </div>
+    //     <span class="card-file" title="${fileName}">${fileName}</span>
+    //   </div>
+    //   <div class="card-snippet">${snippet}</div>
+    // </div>`;
   }
 
   function render(): void {
@@ -277,6 +305,7 @@ const CARD_LIST_NO_RESULTS_HTML: string = `<div class="empty">
       return;
     }
 
+    const renderedCardsFragment: DocumentFragment = document.createDocumentFragment();
     const renderedCards: string[] = [];
     for (const filehighlight of filteredFileHighlights) {
       // oxlint-disable-next-line legibility/no-single-use-renaming-alias

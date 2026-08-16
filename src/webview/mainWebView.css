@@ -1,4 +1,20 @@
 /** biome-ignore-all lint/nursery/noUnusedClasses: biome can't detect the usage in mainWebview.html */
+
+/* @property --tag-bg {
+  syntax: "<color>";
+  inherits: true;
+}
+@property --tag-color {
+  syntax: "<color>";
+  inherits: true;
+}
+
+@property --card-color {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+} */
+
 *,
 *::before,
 *::after {
@@ -21,6 +37,7 @@
   --dm-radius: 8px;
   --dm-font: var(--vscode-font-family, "Segoe UI", system-ui, sans-serif);
   --dm-mono: var(--vscode-editor-font-family, "Cascadia Code", "Fira Code", monospace);
+  /* --card-color: var(--vscode-panel-border, #313244); */
 }
 
 body {
@@ -155,8 +172,10 @@ body {
   padding: 1px 6px;
   font-size: 10px;
   font-weight: 700;
+  color: var(--tag-color);
   text-transform: uppercase;
   letter-spacing: 0.6px;
+  background-color: var(--tag-bg);
   border-radius: 4px;
   opacity: 0.9;
 }

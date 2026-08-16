@@ -679,7 +679,12 @@
         // Enforce that await is only used on Promise values. See https://biomejs.dev/linter/rules/use-await-thenable
         "useAwaitThenable": "on",
         // Disallow CSS properties, values, at-rules, functions, and selectors that are not part of the configured Baseline. See https://biomejs.dev/linter/rules/use-baseline
-        "useBaseline": "on",
+        "useBaseline": {
+          "level": "on",
+          "options": {
+            "available": "newly"
+          }
+        },
         // Enforce consistent use of it or test for test functions. See https://biomejs.dev/linter/rules/use-consistent-test-it
         "useConsistentTestIt": "on",
         // Detects a disposable object assigned to a variable without using or await using syntax. See https://biomejs.dev/linter/rules/use-disposables
