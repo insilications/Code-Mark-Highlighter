@@ -130,7 +130,7 @@ export default defineConfig(({ mode }: ConfigEnv): UserConfig => {
   const isExtension: boolean = mode === "extension";
   const isWebview: boolean = mode === "webview";
 
-  if (!isExtension && !isWebview) {
+  if (!(isExtension || isWebview)) {
     throw new Error(`Unknown build mode "${mode}". Expected "extension" or "webview".`);
   }
 

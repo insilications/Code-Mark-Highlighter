@@ -71,5 +71,5 @@ export function highlightCodeQuick(sidebar: SidebarProvider): void {
   applyHighlightsToEditor(editor, highlightRepository.getHighlights(filePath)!);
 
   sidebar.refreshSidebar();
-  vscode.window.setStatusBarMessage(`$(bookmark) Code Mark: Highlight added`, 3000);
+  vscode.window.setStatusBarMessage("Code Mark Highlight: Highlight added", 3000);
 }

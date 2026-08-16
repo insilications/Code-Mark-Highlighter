@@ -122,8 +122,7 @@ declare function acquireVsCodeApi(): VsCodeApi;
           }
         }
 
-        // oxlint-disable-next-line unicorn/explicit-length-check
-        if (matches.length !== 0) {
+        if (matches.length > 0) {
           result.push({
             ...file,
             highlights: matches,

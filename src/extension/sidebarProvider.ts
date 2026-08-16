@@ -27,7 +27,7 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
   private view?: vscode.WebviewView;
   private webviewIdMessageParticipant?: WebviewIdMessageParticipant;
   // private mainWebViewScriptUri: vscode.Uri;
-  private mainWebViewHtmlUri: vscode.Uri;
+  private readonly mainWebViewHtmlUri: vscode.Uri;
 
   public constructor(
     private readonly extensionContext: vscode.ExtensionContext,
@@ -103,7 +103,7 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
       "[Code Mark Highlighter] refreshSidebar - Refreshing sidebar with latest highlights data.",
     );
     // Is this necessary? The webview should be ready when this is called, but just in case.
-    if (!this.view || !this.webviewIdMessageParticipant) {
+    if (!(this.view && this.webviewIdMessageParticipant)) {
       return;
     }
 
