@@ -16,6 +16,8 @@ import { esc, hexToRgba } from "./utils";
 
 declare function acquireVsCodeApi(): VsCodeApi;
 
+const ALL_TAGS: string = "All Tags";
+
 // const CARD_LIST_NO_HIGHLIGHTS_HTML: string = `<div class="empty">
 //           <div class="empty-icon">✨</div>
 //           <div class="empty-title">No highlights yet</div>
@@ -62,9 +64,8 @@ declare function acquireVsCodeApi(): VsCodeApi;
   const statsFilesElement: HTMLSpanElement = document.getElementById(
     "stat-files",
   ) as HTMLSpanElement;
-
   // oxlint-disable-next-line typescript/no-non-null-assertion typescript/no-unsafe-type-assertion
-  const filterTagEl: HTMLSelectElement = document.getElementById(
+  const filterTagElement: HTMLSelectElement = document.getElementById(
     "filter-tag",
   )! as HTMLSelectElement;
 
@@ -83,12 +84,12 @@ declare function acquireVsCodeApi(): VsCodeApi;
     const tags: string[] = Array.from(uniqueTags);
     tags.sort();
 
-    filterTagEl.innerHTML = `<option value="">All tags</option>${tags
-      .map(
-        (t: string): string =>
-          `<option value="${t}" ${t === filterTagEl.value ? "selected" : ""}>${t}</option>`,
-      )
-      .join("")}`;
+    filterTagElement.innerHTML = tags
+      .map((t: string): string => {
+        const label: string = t === "" ? ALL_TAGS : t;
+        return `<option value="${t}" ${t === filterTagElement.value ? "selected" : ""}>${label}</option>`;
+      })
+      .join("");
   }
 
   /**
@@ -437,7 +438,7 @@ declare function acquireVsCodeApi(): VsCodeApi;
     searchNeedle = (e.target as HTMLInputElement).value.trim().toLowerCase();
     render();
   });
-  filterTagEl.addEventListener("change", (e: Event): void => {
+  filterTagElement.addEventListener("change", (e: Event): void => {
     // oxlint-disable-next-line typescript/no-unsafe-type-assertion
     tagNeedle = (e.target as HTMLInputElement).value.trim().toLowerCase();
     render();
