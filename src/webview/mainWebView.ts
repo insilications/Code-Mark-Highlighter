@@ -219,15 +219,37 @@ const CARD_LIST_NO_RESULTS_HTML: string = `<div class="empty">
     return result;
   }
 
+  //   function renderCard(filePath: string, highlight: HighlightViewModel): string {
+  //   const snippet = esc(highlight.codeSnippetDisplay.split("\\n").slice(0, 12).join("\\n"));
+  //   const fileName = esc(filePath);
+  //   const tagColor = esc(highlight.color);
+  //   const tagBg = hexToRgba(highlight.color, 0.18);
+
+  //   return `<div class="card" data-id="${esc(highlight.id)}" style="border: 1px solid ${tagColor};">
+  //     <div class="card-top">
+  //       ${highlight.tag ? `<span class="card-tag" style="background:${tagBg};color:${tagColor}">${esc(highlight.tag)}</span>` : ""}
+  //       <div class="card-actions">
+  //         <button class="btn btn-jump">↗ Jump</button>
+  //         <button class="btn btn-tag">🏷 Tag</button>
+  //         <button class="btn btn-color">🎨 Color</button>
+  //         <button class="btn btn-danger btn-delete">🗑</button>
+  //       </div>
+  //       <span class="card-file" title="${fileName}">${fileName}</span>
+  //     </div>
+  //     <div class="card-snippet">${snippet}</div>
+  //   </div>`;
+  // }
+
   function renderCard(filePath: string, highlight: HighlightViewModel): string {
     const snippet = esc(highlight.codeSnippetDisplay.split("\\n").slice(0, 12).join("\\n"));
-    const fileName = esc(filePath);
-    const tagColor = esc(highlight.color);
-    const tagBg = hexToRgba(highlight.color, 0.18);
+    const tagName: string = esc(highlight.tag);
+    const fileName: string = esc(filePath);
+    const tagColor: string = esc(highlight.color);
+    const tagBg: string = hexToRgba(highlight.color, 0.18);
 
-    return `<div class="card" data-id="${esc(highlight.id)}" style="border: 1px solid ${tagColor};">
+    return `<div class="card" data-id="${esc(highlight.id)}">
       <div class="card-top">
-        ${highlight.tag ? `<span class="card-tag" style="background:${tagBg};color:${tagColor}">${esc(highlight.tag)}</span>` : ""}
+        ${tagName ? `<span class="card-tag">${tagName}</span>` : ""}
         <div class="card-actions">
           <button class="btn btn-jump">↗ Jump</button>
           <button class="btn btn-tag">🏷 Tag</button>
