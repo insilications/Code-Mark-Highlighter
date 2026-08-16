@@ -68,9 +68,58 @@ const ALL_TAGS: string = "All Tags";
   const filterTagElement: HTMLSelectElement = document.getElementById(
     "filter-tag",
   )! as HTMLSelectElement;
-
+  const filterTagAllOptionElement: HTMLOptionElement =
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+    filterTagElement.firstElementChild as HTMLOptionElement;
   // oxlint-disable-next-line typescript/no-non-null-assertion typescript/no-unsafe-type-assertion
   const searchEl: HTMLInputElement = document.getElementById("search")! as HTMLInputElement;
+
+  function renderTags(selectElement: HTMLSelectElement, newTags: string[]): void {
+    // 1. Preserve state: Mutation will shift the selected index underneath us.
+    // oxlint-disable-next-line legibility/no-single-use-renaming-alias
+    const previousValue: string = selectElement.value;
+
+    // The first option (index 0) is the static "All Tags" element.
+    // Our dynamic buffer starts at index 1.
+    const targetTotalLength: number = newTags.length + 1;
+
+    // 2. In-place overwrite (Avoid allocation/GC churn)
+    for (let i: number = 0; i < newTags.length; i++) {
+      // oxlint-disable-next-line typescript/no-non-null-assertion
+      const tag: string = newTags[i]!;
+      const optionIndex: number = i + 1;
+
+      if (optionIndex < selectElement.options.length) {
+        // Node exists: overwrite its memory footprint
+        // oxlint-disable-next-line typescript/no-non-null-assertion
+        const opt: HTMLOptionElement = selectElement.options[optionIndex]!;
+
+        // Strict equality check prevents triggering unnecessary DOM invalidation flags
+        if (opt.value !== tag) {
+          opt.value = tag;
+          opt.textContent = tag;
+        }
+      } else {
+        // Buffer too small: allocate a new node
+        // Note: new Option(text, value) is a fast-path constructor in V8/Blink
+        selectElement.add(new Option(tag, tag));
+      }
+    }
+
+    // 3. Truncate excess (Freeing memory)
+    // Mutating the 'length' property on an HTMLOptionsCollection is heavily
+    // optimized in browser engines. It immediately strips trailing nodes.
+    if (selectElement.options.length > targetTotalLength) {
+      selectElement.options.length = targetTotalLength;
+    }
+
+    // 4. Restore state: Re-apply the selection, or fallback to index 0 if
+    // the previously selected tag no longer exists in the new array.
+    selectElement.value = previousValue;
+    if (selectElement.selectedIndex === -1) {
+      selectElement.selectedIndex = 0;
+    }
+  }
 
   function rebuildTagFilter(): void {
     const uniqueTags = new Set<string>();
@@ -80,16 +129,25 @@ const ALL_TAGS: string = "All Tags";
         uniqueTags.add(esc(highlight.tag));
       }
     }
+
+    if (uniqueTags.size === 1) {
+      return;
+    }
+
     // const tags: string[] = Array.from(uniqueTags).sort();
     const tags: string[] = Array.from(uniqueTags);
     tags.sort();
 
-    filterTagElement.innerHTML = tags
-      .map((t: string): string => {
-        const label: string = t === "" ? ALL_TAGS : t;
-        return `<option value="${t}" ${t === filterTagElement.value ? "selected" : ""}>${label}</option>`;
-      })
-      .join("");
+    renderTags(filterTagElement, tags);
+
+    // filterTagAllOptionElement.setAttribute("value", "");
+
+    // filterTagElement.innerHTML = tags
+    //   .map((t: string): string => {
+    //     const label: string = t === "" ? ALL_TAGS : t;
+    //     return `<option value="${t}" ${t === filterTagElement.value ? "selected" : ""}>${label}</option>`;
+    //   })
+    //   .join("");
   }
 
   /**
@@ -432,7 +490,7 @@ const ALL_TAGS: string = "All Tags";
     }
   }
 
-  // // Search / filter
+  // Search & Filter
   searchEl.addEventListener("input", (e: Event): void => {
     // oxlint-disable-next-line typescript/no-unsafe-type-assertion
     searchNeedle = (e.target as HTMLInputElement).value.trim().toLowerCase();

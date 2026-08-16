@@ -47,6 +47,9 @@ export class HighlightRepository {
    */
   private sortedFilePathsCache: string[] | null = null;
 
+  /** Map of the current tags to the number of highlights that use each tag. */
+  private currentTagsCache: Map<string, number> = new Map();
+
   /**
    * If an existing FileHighlights instance is supplied, this repository takes ownership of it.
    *
@@ -103,14 +106,14 @@ export class HighlightRepository {
    * Adds one Highlight.
    *
    * For existing file:
-   * - binary-search insertion point.
-   * - splice into its already-sorted array.
-   * - filepath cache remains valid.
+   * - Binary-search insertion point.
+   * - Splice into its already-sorted array.
+   * - Filepath cache remains valid.
    * - Returns the resulting array index or the position where the highlight was inserted.
    *
    * New file:
-   * - create the bucket.
-   * - invalidate the filepath cache because the set of keys changed.
+   * - Create the bucket.
+   * - Invalidate the filepath cache because the set of keys changed.
    * - Returns 0 because the new highlight is the first and only entry in its array.
    *
    * No global filepath sorting occurs here.
@@ -445,7 +448,7 @@ export class HighlightRepository {
    * Marks only the derived filepath ordering as stale.
    *
    * Keeping invalidation in one tiny method makes the important structural invariant easy to audit:
-   * every operation that adds/removes a Map key must reach this method.
+   * every operation that adds/removes a key from the `this.fileHighlights` must reach this method.
    */
   private invalidateSortedFilePaths(): void {
     this.sortedFilePathsCache = null;

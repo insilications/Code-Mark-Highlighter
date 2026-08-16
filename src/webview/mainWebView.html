@@ -23,7 +23,9 @@
     <!-- Filter Bar -->
     <div class="filter-bar">
       <input id="search" placeholder="Search tags, code…" type="text" />
-      <select id="filter-tag"></select>
+      <select id="filter-tag">
+        <option id="all-tags" selected value="">All Tags</option>
+      </select>
     </div>
 
     <!-- Highlight List -->
@@ -64,6 +66,12 @@
           <span class="card-file"></span>
         </div>
         <div class="card-snippet"></div>
+      </div>
+    </template>
+    <template id="tags-opt" >
+      <div class="tag">
+        <span class="tag-name"></span>
+        <button class="btn btn-danger btn-delete-tag">🗑</button>
       </div>
     </template>
   </body>
