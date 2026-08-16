@@ -16,16 +16,16 @@ import { esc, hexToRgba } from "./utils";
 
 declare function acquireVsCodeApi(): VsCodeApi;
 
-const CARD_LIST_NO_HIGHLIGHTS_HTML: string = `<div class="empty">
-          <div class="empty-icon">✨</div>
-          <div class="empty-title">No highlights yet</div>
-          <div class="empty-sub">Select code → right-click<br>→ <strong>Code Mark: Highlight Code</strong></div>
-        </div>`;
-const CARD_LIST_NO_RESULTS_HTML: string = `<div class="empty">
-          <div class="empty-icon">🔍</div>
-          <div class="empty-title">No results</div>
-          <div class="empty-sub">Try a different search or filter.</div>
-        </div>`;
+// const CARD_LIST_NO_HIGHLIGHTS_HTML: string = `<div class="empty">
+//           <div class="empty-icon">✨</div>
+//           <div class="empty-title">No highlights yet</div>
+//           <div class="empty-sub">Select code → right-click<br>→ <strong>Code Mark: Highlight Code</strong></div>
+//         </div>`;
+// const CARD_LIST_NO_RESULTS_HTML: string = `<div class="empty">
+//           <div class="empty-icon">🔍</div>
+//           <div class="empty-title">No results</div>
+//           <div class="empty-sub">Try a different search or filter.</div>
+//         </div>`;
 
 // This will be run within the WebView itself and cannot access the main VS Code APIs directly.
 ((): void => {
@@ -42,6 +42,14 @@ const CARD_LIST_NO_RESULTS_HTML: string = `<div class="empty">
   ) as HTMLTemplateElement;
   // oxlint-disable-next-line typescript/no-unsafe-type-assertion
   const cardListElement: HTMLDivElement = document.getElementById("list") as HTMLDivElement;
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+  const cardListEmptyHighlightsElement: HTMLDivElement = document.getElementById(
+    "empty-highlights",
+  ) as HTMLDivElement;
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+  const cardListEmptyResultsElement: HTMLDivElement = document.getElementById(
+    "empty-results",
+  ) as HTMLDivElement;
   // oxlint-disable-next-line typescript/no-unsafe-type-assertion
   const cardCountElement: HTMLSpanElement = document.getElementById("count") as HTMLSpanElement;
   // oxlint-disable-next-line typescript/no-unsafe-type-assertion
@@ -245,11 +253,14 @@ const CARD_LIST_NO_RESULTS_HTML: string = `<div class="empty">
   // }
 
   function renderCard(filePath: string, highlight: HighlightViewModel): HTMLDivElement {
-    const snippet = esc(highlight.codeSnippetDisplay.split("\\n").slice(0, 12).join("\\n"));
+    // const snippet = esc(highlight.codeSnippetDisplay.split("\\n").slice(0, 12).join("\\n"));
+    const snippet: string = highlight.codeSnippetDisplay.split("\\n").slice(0, 12).join("\\n");
     const id: string = esc(highlight.id);
     // const tagName: string = esc(highlight.tag);
-    const fileName: string = esc(filePath);
-    const tagColor: string = esc(highlight.color);
+    // const fileName: string = esc(filePath);
+    // const tagColor: string = esc(highlight.color);
+    // oxlint-disable-next-line legibility/no-single-use-renaming-alias
+    const tagColor: string = highlight.color;
     // const tagBg: string = hexToRgba(highlight.color, 0.18);
     // cardsTemplate
     // const newDiv = document.createElement("div");
@@ -269,8 +280,8 @@ const CARD_LIST_NO_RESULTS_HTML: string = `<div class="empty">
 
     cardElement.dataset.id = id;
     cardElement.style.borderColor = tagColor;
-    cardFileElement.title = fileName;
-    cardFileElement.textContent = fileName;
+    cardFileElement.title = filePath;
+    cardFileElement.textContent = filePath;
     cardSnippetElement.textContent = snippet;
 
     return cardElement;
@@ -297,16 +308,20 @@ const CARD_LIST_NO_RESULTS_HTML: string = `<div class="empty">
 
     if (filteredFileHighlights.length === 0) {
       if (fileHighlightsViewModel.length === 0) {
-        cardListElement.innerHTML = CARD_LIST_NO_HIGHLIGHTS_HTML;
+        // cardListElement.innerHTML = CARD_LIST_NO_HIGHLIGHTS_HTML;
+        cardListEmptyResultsElement.style.display = "none";
+        cardListEmptyHighlightsElement.style.display = "flex";
       } else {
-        cardListElement.innerHTML = CARD_LIST_NO_RESULTS_HTML;
+        // cardListElement.innerHTML = CARD_LIST_NO_RESULTS_HTML;
+        cardListEmptyHighlightsElement.style.display = "none";
+        cardListEmptyResultsElement.style.display = "flex";
       }
       statsBarElement.style.display = "none";
       return;
     }
 
-    const renderedCardsFragment: DocumentFragment = document.createDocumentFragment();
-    const renderedCards: string[] = [];
+    // const renderedCardsFragment: DocumentFragment = document.createDocumentFragment();
+    const renderedCards: HTMLDivElement[] = [];
     for (const filehighlight of filteredFileHighlights) {
       // oxlint-disable-next-line legibility/no-single-use-renaming-alias
       const filePath: string = filehighlight.filePath;
@@ -315,12 +330,15 @@ const CARD_LIST_NO_RESULTS_HTML: string = `<div class="empty">
       }
     }
 
-    cardListElement.innerHTML = renderedCards.join("");
+    // cardListElement.innerHTML = renderedCards.join("");
+    cardListElement.append(...renderedCards);
 
     // Stats
-    const uniqueFiles = new Set(filteredFileHighlights.map((h) => h.filePath)).size;
-    const totalHighlights = filteredFileHighlights.reduce(
-      (acc, fh) => acc + fh.highlights.length,
+    const uniqueFiles: number = new Set(
+      filteredFileHighlights.map((h: FileHighlightsViewModel) => h.filePath),
+    ).size;
+    const totalHighlights: number = filteredFileHighlights.reduce(
+      (acc: number, fh: FileHighlightsViewModel) => acc + fh.highlights.length,
       0,
     );
     statsTotalElement.textContent = `${totalHighlights} highlight${totalHighlights === 1 ? "" : "s"}`;
