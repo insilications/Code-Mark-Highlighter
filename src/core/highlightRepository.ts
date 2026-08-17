@@ -43,12 +43,12 @@ export class HighlightRepository {
    * The strings themselves are not copied; this array merely holds references to the same filepath
    * strings already used as Map keys, so its memory cost is small.
    *
-   * Null means "the cache needs to be rebuilt."
+   * `null` means "the cache needs to be rebuilt".
    */
   private sortedFilePathsCache: string[] | null = null;
 
   /** Map of the current tags to the number of highlights that use each tag. */
-  private currentTagsCache: Map<string, number> = new Map();
+  private readonly currentTagsCache: Map<string, number> = new Map<string, number>();
 
   /**
    * If an existing FileHighlights instance is supplied, this repository takes ownership of it.
@@ -60,6 +60,21 @@ export class HighlightRepository {
    * this repository.
    */
   public constructor(fileHighlights: FileHighlights = new Map()) {
+    for (const highlights of fileHighlights.values()) {
+      // oxlint-disable-next-line legibility/no-single-use-renaming-alias
+      const highlightsLength: number = highlights.length;
+      // oxlint-disable-next-line legibility/no-quadratic-patterns
+      for (let i: number = 0; i < highlightsLength; i++) {
+        // oxlint-disable-next-line typescript/no-non-null-assertion
+        const tag: string = highlights[i]!.tag;
+        const currentCount: number | undefined = this.currentTagsCache.get(tag);
+
+        // oxlint-disable-next-line no-undefined
+        this.currentTagsCache.set(tag, currentCount === undefined ? 1 : currentCount + 1);
+      }
+    }
+    console.log("HighlightRepository - this.currentTagsCache: ", this.currentTagsCache);
+
     this.fileHighlights = fileHighlights;
   }
 
@@ -119,6 +134,12 @@ export class HighlightRepository {
    * No global filepath sorting occurs here.
    */
   public addHighlight(filePath: string, highlight: Highlight): number {
+    const tag: string = highlight.tag;
+    const currentCount: number | undefined = this.currentTagsCache.get(tag);
+    // oxlint-disable-next-line no-undefined
+    this.currentTagsCache.set(tag, currentCount === undefined ? 1 : currentCount + 1);
+    console.log("addHighlight - this.currentTagsCache: ", this.currentTagsCache);
+
     const highlights: Highlight[] | undefined = this.fileHighlights.get(filePath);
 
     // oxlint-disable-next-line no-undefined
@@ -127,12 +148,25 @@ export class HighlightRepository {
     }
 
     this.fileHighlights.set(filePath, [highlight]);
-
     this.invalidateSortedFilePaths();
 
     saveHighlights(this.fileHighlights);
     return 0;
   }
+  // public addHighlight(filePath: string, highlight: Highlight): number {
+  //   const highlights: Highlight[] | undefined = this.fileHighlights.get(filePath);
+
+  //   // oxlint-disable-next-line no-undefined
+  //   if (highlights !== undefined) {
+  //     return insertHighlightSorted(highlights, highlight);
+  //   }
+
+  //   this.fileHighlights.set(filePath, [highlight]);
+  //   this.invalidateSortedFilePaths();
+
+  //   saveHighlights(this.fileHighlights);
+  //   return 0;
+  // }
 
   /**
    * Adds several highlights to one file.

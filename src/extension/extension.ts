@@ -16,9 +16,7 @@ const messenger = new Messenger();
 
 export function activate(context: vscode.ExtensionContext): MessengerDiagnostic {
   try {
-    const highlightStore: HighlightStore = loadHighlights();
-
-    highlightRepository = HighlightRepository.fromStore(highlightStore);
+    highlightRepository = HighlightRepository.fromStore(loadHighlights());
 
     // =====================================================================
     // Sidebar Provider
