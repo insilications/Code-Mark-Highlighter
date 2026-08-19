@@ -63,6 +63,8 @@ export class HighlightRepository {
     for (const highlights of fileHighlights.values()) {
       // oxlint-disable-next-line legibility/no-single-use-renaming-alias
       const highlightsLength: number = highlights.length;
+      // The following pattern is actually `O(n)`, not `O(n^2)`.
+      // The `legibility/no-quadratic-patterns` rule tends to flag lexical nesting depth.
       // oxlint-disable-next-line legibility/no-quadratic-patterns
       for (let i: number = 0; i < highlightsLength; i++) {
         // oxlint-disable-next-line typescript/no-non-null-assertion
