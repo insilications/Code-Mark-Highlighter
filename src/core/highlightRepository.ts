@@ -9,7 +9,13 @@ import {
   sortHighlightsByRange,
 } from "./highlightUtils";
 import { deserializeHighlightStore, serializeHighlightStore } from "./serialization";
-import type { FileHighlights, FileHighlightsViewModel, Highlight, HighlightStore } from "./types";
+import type {
+  FileHighlights,
+  FileHighlightsViewModel,
+  Highlight,
+  HighlightStore,
+  WebviewViewModel,
+} from "./types";
 import { compareFilePathsForDisplay, createHighlightViewModels } from "./webviewProjection";
 
 /**
@@ -48,11 +54,20 @@ export class HighlightRepository {
   private sortedFilePathsCache: string[] | null = null;
 
   /** Map of the current tags to the number of highlights that use each tag. */
-  // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-  private readonly currentTagsCache: Record<string, number> = Object.create(null) as Record<
-    string,
-    number
-  >;
+  private readonly tagsCountCache: Map<string, number> = new Map<string, number>();
+
+  /**
+   * Lazily-created sorted view of the current tags.
+   *
+   * The strings themselves are not copied; this array merely holds references to the same tag
+   * strings already used as keys in `this.tagsCountCache`, so its memory cost is small.
+   *
+   * The cache is invalidated and rebuilt when `this.sortedTagsDirty` is set to true.
+   */
+  private sortedTagsCache: string[] = [];
+
+  /** Indicates whether the sorted tags cache in `this.sortedTagsCache` needs to be rebuilt. */
+  private sortedTagsDirty: boolean = true;
 
   /**
    * If an existing FileHighlights instance is supplied, this repository takes ownership of it.
@@ -73,12 +88,14 @@ export class HighlightRepository {
       for (let i: number = 0; i < highlightsLength; i++) {
         // oxlint-disable-next-line typescript/no-non-null-assertion
         const tag: string = highlights[i]!.tag;
-        const currentCount: number | undefined = this.currentTagsCache[tag];
-        // oxlint-disable-next-line no-undefined
-        this.currentTagsCache[tag] = currentCount === undefined ? 1 : currentCount + 1;
+        if (tag.length > 0) {
+          const currentCount: number | undefined = this.tagsCountCache.get(tag);
+          // oxlint-disable-next-line no-undefined
+          this.tagsCountCache.set(tag, currentCount === undefined ? 1 : currentCount + 1);
+        }
       }
     }
-    console.log("HighlightRepository - this.currentTagsCache: ", this.currentTagsCache);
+    console.log("HighlightRepository - this.tagsCountCache: ", this.tagsCountCache);
 
     this.fileHighlights = fileHighlights;
   }
@@ -140,10 +157,15 @@ export class HighlightRepository {
    */
   public addHighlight(filePath: string, highlight: Highlight): number {
     const tag: string = highlight.tag;
-    const currentCount: number | undefined = this.currentTagsCache[tag];
+    const currentCount: number | undefined = this.tagsCountCache.get(tag);
     // oxlint-disable-next-line no-undefined
-    this.currentTagsCache[tag] = currentCount === undefined ? 1 : currentCount + 1;
-    console.log("addHighlight - this.currentTagsCache: ", this.currentTagsCache);
+    if (currentCount === undefined) {
+      this.sortedTagsDirty = true;
+      this.tagsCountCache.set(tag, 1);
+    } else {
+      this.tagsCountCache.set(tag, currentCount + 1);
+    }
+    console.log("addHighlight - this.tagsCountCache: ", this.tagsCountCache);
 
     const highlights: Highlight[] | undefined = this.fileHighlights.get(filePath);
 
@@ -210,7 +232,6 @@ export class HighlightRepository {
       this.fileHighlights.set(filePath, highlights);
 
       this.invalidateSortedFilePaths();
-
       return;
     }
 
@@ -412,7 +433,7 @@ export class HighlightRepository {
    *
    * Where F is the number of files containing highlights.
    *
-   * Crucially, editing ranges, repairing fuzzy matches, changing tags/colors, or adding/removing
+   * Editing ranges, repairing fuzzy matches, changing tags/colors, or adding/removing
    * highlights from an existing non-empty file does not invalidate this cache.
    */
   public getSortedFilePaths(): readonly string[] {
@@ -428,6 +449,29 @@ export class HighlightRepository {
   }
 
   /**
+   * Returns the keys from `this.tagsCountCache` in sorted order when `this.sortedTagsDirty` is
+   * `true`, otherwise returns `null`. The cache gets dirty when tags are added or removed.
+   *
+   * When `this.sortedTagsDirty` is `true`:
+   * - The cache is invalidated by setting `this.sortedTagsDirty` to `false`
+   * - `this.sortedTagsCache` is rebuilt from the sorted keys of `this.tagsCountCache`.
+   * - `this.sortedTagsCache` is returned.
+   *
+   * When `this.sortedTagsDirty` is `false`:
+   * - `null` is returned.
+   */
+  public getSortedTags(): readonly string[] | null {
+    if (this.sortedTagsDirty) {
+      this.sortedTagsDirty = false;
+      // oxlint-disable-next-line unicorn/no-array-sort
+      this.sortedTagsCache = [...this.tagsCountCache.keys()].sort();
+      return this.sortedTagsCache;
+    }
+
+    return null;
+  }
+
+  /**
    * Builds a webview projection.
    *
    * Filepath sorting is normally absent from this hot path because getSortedFilePaths() reuses its
@@ -436,10 +480,10 @@ export class HighlightRepository {
    * A fresh result array is still intentionally produced because Highlight contents may have
    * changed since the previous webview update.
    */
-  public createWebviewModel(): FileHighlightsViewModel[] {
+  public createWebviewModel(): WebviewViewModel {
     const filePaths: readonly string[] = this.getSortedFilePaths();
 
-    const result = new Array<FileHighlightsViewModel>(filePaths.length);
+    const fileHighlightsViewModel = new Array<FileHighlightsViewModel>(filePaths.length);
 
     for (let i: number = 0; i < filePaths.length; i++) {
       // oxlint-disable-next-line typescript/no-non-null-assertion
@@ -453,14 +497,19 @@ export class HighlightRepository {
       // oxlint-disable-next-line typescript/no-non-null-assertion
       const highlights: Highlight[] = this.fileHighlights.get(filePath)!;
 
-      result[i] = {
+      fileHighlightsViewModel[i] = {
         filePath,
         filePathSearch: filePath.toLowerCase(),
         highlights: createHighlightViewModels(highlights),
       };
     }
 
-    return result;
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+    const webviewViewModel: WebviewViewModel = Object.create(null) as WebviewViewModel;
+
+    webviewViewModel.fileHighlights = fileHighlightsViewModel;
+    webviewViewModel.sortedTags = this.getSortedTags();
+    return webviewViewModel;
   }
 
   /** Produces the model suitable for workspaceState or JSON persistence. */

@@ -13,7 +13,7 @@ import {
   updateWebViewNotificationType,
   webViewReadyNotificationType,
 } from "@/core/messenger-types";
-import type { FileHighlightsViewModel, Highlight, JumpToHighlightParams } from "@/core/types";
+import type { Highlight, JumpToHighlightParams, WebviewViewModel } from "@/core/types";
 import { getNonce } from "@/core/utils";
 
 import { applyHighlightsToEditor } from "./decorationManager";
@@ -107,12 +107,11 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
       return;
     }
 
-    const fileHighlightsViewModel: FileHighlightsViewModel[] =
-      this.highlightRepository.createWebviewModel();
+    const webviewViewModel: WebviewViewModel = this.highlightRepository.createWebviewModel();
     this.messenger.sendNotification(
       updateWebViewNotificationType,
       this.webviewIdMessageParticipant,
-      fileHighlightsViewModel,
+      webviewViewModel,
     );
   }
 

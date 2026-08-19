@@ -1,6 +1,6 @@
 import type { NotificationType } from "vscode-messenger-common";
 
-import type { FileHighlightsViewModel, JumpToHighlightParams } from "./types";
+import type { JumpToHighlightParams, WebviewViewModel } from "./types";
 
 // =====================================================================
 // WebView message types — declare once, import on both sides
@@ -14,6 +14,6 @@ export const webViewReadyNotificationType: NotificationType<void> = {
 export const refreshActiveEditorNotificationType: NotificationType<void> = {
   method: "refreshActiveEditor",
 };
-export const updateWebViewNotificationType: NotificationType<FileHighlightsViewModel[]> = {
+export const updateWebViewNotificationType: NotificationType<WebviewViewModel> = {
   method: "updateWebView",
 };

@@ -9,14 +9,14 @@ import {
   updateWebViewNotificationType,
   webViewReadyNotificationType,
 } from "@/core/messenger-types";
-import type { FileHighlightsViewModel, HighlightViewModel } from "@/core/types";
+import type { FileHighlightsViewModel, HighlightViewModel, WebviewViewModel } from "@/core/types";
 
 import "./mainWebView.css";
-import { esc, hexToRgba } from "./utils";
+import { esc } from "./utils";
 
 declare function acquireVsCodeApi(): VsCodeApi;
 
-const ALL_TAGS: string = "All Tags";
+// const ALL_TAGS: string = "All Tags";
 
 // const CARD_LIST_NO_HIGHLIGHTS_HTML: string = `<div class="empty">
 //           <div class="empty-icon">✨</div>
@@ -31,7 +31,8 @@ const ALL_TAGS: string = "All Tags";
 
 // This will be run within the WebView itself and cannot access the main VS Code APIs directly.
 ((): void => {
-  let fileHighlightsViewModel: FileHighlightsViewModel[] = [];
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+  let webviewViewModel: WebviewViewModel = {} as WebviewViewModel;
   const vscode: VsCodeApi = acquireVsCodeApi();
   const messenger = new Messenger(vscode);
 
@@ -68,87 +69,177 @@ const ALL_TAGS: string = "All Tags";
   const filterTagElement: HTMLSelectElement = document.getElementById(
     "filter-tag",
   )! as HTMLSelectElement;
-  const filterTagAllOptionElement: HTMLOptionElement =
-    // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-    filterTagElement.firstElementChild as HTMLOptionElement;
+  // const filterTagAllOptionElement: HTMLOptionElement =
+  //   // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+  //   filterTagElement.firstElementChild as HTMLOptionElement;
   // oxlint-disable-next-line typescript/no-non-null-assertion typescript/no-unsafe-type-assertion
   const searchEl: HTMLInputElement = document.getElementById("search")! as HTMLInputElement;
 
-  function renderTags(selectElement: HTMLSelectElement, newTags: string[]): void {
-    // 1. Preserve state: Mutation will shift the selected index underneath us.
-    // oxlint-disable-next-line legibility/no-single-use-renaming-alias
-    const previousValue: string = selectElement.value;
-
-    // The first option (index 0) is the static "All Tags" element.
-    // Our dynamic buffer starts at index 1.
-    const targetTotalLength: number = newTags.length + 1;
-
-    // 2. In-place overwrite (Avoid allocation/GC churn)
-    for (let i: number = 0; i < newTags.length; i++) {
-      // oxlint-disable-next-line typescript/no-non-null-assertion
-      const tag: string = newTags[i]!;
-      const optionIndex: number = i + 1;
-
-      if (optionIndex < selectElement.options.length) {
-        // Node exists: overwrite its memory footprint
-        // oxlint-disable-next-line typescript/no-non-null-assertion
-        const opt: HTMLOptionElement = selectElement.options[optionIndex]!;
-
-        // Strict equality check prevents triggering unnecessary DOM invalidation flags
-        if (opt.value !== tag) {
-          opt.value = tag;
-          opt.textContent = tag;
-        }
-      } else {
-        // Buffer too small: allocate a new node
-        // Note: new Option(text, value) is a fast-path constructor in V8/Blink
-        selectElement.add(new Option(tag, tag));
-      }
+  function compareTags(a: string, b: string): number {
+    if (a < b) {
+      return -1;
     }
 
-    // 3. Truncate excess (Freeing memory)
-    // Mutating the 'length' property on an HTMLOptionsCollection is heavily
-    // optimized in browser engines. It immediately strips trailing nodes.
-    if (selectElement.options.length > targetTotalLength) {
-      selectElement.options.length = targetTotalLength;
+    if (a > b) {
+      return 1;
     }
 
-    // 4. Restore state: Re-apply the selection, or fallback to index 0 if
-    // the previously selected tag no longer exists in the new array.
-    selectElement.value = previousValue;
-    if (selectElement.selectedIndex === -1) {
-      selectElement.selectedIndex = 0;
-    }
+    return 0;
   }
 
-  function rebuildTagFilter(): void {
-    const uniqueTags = new Set<string>();
-
-    for (const file of fileHighlightsViewModel) {
-      for (const highlight of file.highlights) {
-        uniqueTags.add(esc(highlight.tag));
-      }
-    }
-
-    if (uniqueTags.size === 1) {
+  function renderFilterTagElement(): void {
+    const sortedTags: readonly string[] | null = webviewViewModel.sortedTags;
+    if (sortedTags === null) {
       return;
     }
 
-    // const tags: string[] = Array.from(uniqueTags).sort();
-    const tags: string[] = Array.from(uniqueTags);
-    tags.sort();
+    const options: HTMLOptionsCollection = filterTagElement.options;
+    const previousValue: string = filterTagElement.value;
 
-    renderTags(filterTagElement, tags);
+    // Index 0 is the permanent "All Tags" option.
+    let optionIndex: number = 1;
+    let tagIndex: number = 0;
 
-    // filterTagAllOptionElement.setAttribute("value", "");
+    // Reconcile the portion where both an existing option and an incoming tag
+    // are available.
+    while (optionIndex < options.length && tagIndex < sortedTags.length) {
+      // `options` is a live collection, so this reflects any insertion/removal
+      // performed during the previous iteration.
+      // oxlint-disable-next-line typescript/no-non-null-assertion
+      const option: HTMLOptionElement = options[optionIndex]!;
 
-    // filterTagElement.innerHTML = tags
-    //   .map((t: string): string => {
-    //     const label: string = t === "" ? ALL_TAGS : t;
-    //     return `<option value="${t}" ${t === filterTagElement.value ? "selected" : ""}>${label}</option>`;
-    //   })
-    //   .join("");
+      // oxlint-disable-next-line typescript/no-non-null-assertion
+      const tag: string = sortedTags[tagIndex]!;
+
+      const comparison: number = compareTags(option.value, tag);
+
+      if (comparison === 0) {
+        // The tag already exists in the correct position.
+        optionIndex++;
+        tagIndex++;
+        continue;
+      }
+
+      if (comparison < 0) {
+        // The existing option sorts before the incoming tag, so it no longer
+        // exists in the desired tag set.
+        //
+        // Do not increment optionIndex: HTMLOptionsCollection is live, so the
+        // next option shifts into the current index.
+        filterTagElement.remove(optionIndex);
+        continue;
+      }
+
+      // The incoming tag sorts before the existing option, so it is new.
+      // Insert it before the current option while preserving that option node.
+      filterTagElement.add(new Option(tag, tag), option);
+
+      optionIndex++;
+      tagIndex++;
+    }
+
+    if (tagIndex < sortedTags.length) {
+      // The existing option list was exhausted first. Every remaining incoming
+      // tag is therefore a new trailing option.
+      while (tagIndex < sortedTags.length) {
+        // oxlint-disable-next-line typescript/no-non-null-assertion
+        const tag: string = sortedTags[tagIndex]!;
+
+        filterTagElement.add(new Option(tag, tag));
+        tagIndex++;
+      }
+    } else if (optionIndex < options.length) {
+      // The incoming tag list was exhausted first. Every remaining dynamic
+      // option is therefore obsolete.
+      options.length = optionIndex;
+    }
+
+    // Preserve the previous selection when its tag still exists.
+    if (filterTagElement.value !== previousValue) {
+      filterTagElement.value = previousValue;
+
+      // The previously selected tag no longer exists.
+      if (filterTagElement.selectedIndex === -1) {
+        filterTagElement.selectedIndex = 0;
+      }
+    }
   }
+
+  // function renderFilterTagElement(newTags: string[]): void {
+  //   // 1. Preserve state: Mutation will shift the selected index underneath us.
+  //   // oxlint-disable-next-line legibility/no-single-use-renaming-alias
+  //   const previousValue: string = filterTagElement.value;
+
+  //   // The first option (index 0) is the static "All Tags" element.
+  //   // Our dynamic buffer starts at index 1.
+  //   const targetTotalLength: number = newTags.length + 1;
+
+  //   // 2. In-place overwrite (Avoid allocation/GC churn)
+  //   for (let i: number = 0; i < newTags.length; i++) {
+  //     // oxlint-disable-next-line typescript/no-non-null-assertion
+  //     const tag: string = newTags[i]!;
+  //     const optionIndex: number = i + 1;
+
+  //     if (optionIndex < filterTagElement.options.length) {
+  //       // Node exists: overwrite its memory footprint
+  //       // oxlint-disable-next-line typescript/no-non-null-assertion
+  //       const opt: HTMLOptionElement = filterTagElement.options[optionIndex]!;
+
+  //       // Strict equality check prevents triggering unnecessary DOM invalidation flags
+  //       if (opt.value !== tag) {
+  //         opt.value = tag;
+  //         opt.textContent = tag;
+  //       }
+  //     } else {
+  //       // Buffer too small: allocate a new node
+  //       // Note: new Option(text, value) is a fast-path constructor in V8/Blink
+  //       filterTagElement.add(new Option(tag, tag));
+  //     }
+  //   }
+
+  //   // 3. Truncate excess (Freeing memory)
+  //   // Mutating the 'length' property on an HTMLOptionsCollection is heavily
+  //   // optimized in browser engines. It immediately strips trailing nodes.
+  //   if (filterTagElement.options.length > targetTotalLength) {
+  //     filterTagElement.options.length = targetTotalLength;
+  //   }
+
+  //   // 4. Restore state: Re-apply the selection, or fallback to index 0 if
+  //   // the previously selected tag no longer exists in the new array.
+  //   filterTagElement.value = previousValue;
+  //   if (filterTagElement.selectedIndex === -1) {
+  //     filterTagElement.selectedIndex = 0;
+  //   }
+  // }
+
+  // function rebuildTagFilter(): void {
+  //   const uniqueTags = new Set<string>();
+
+  //   for (const file of webviewViewModel) {
+  //     for (const highlight of file.highlights) {
+  //       uniqueTags.add(esc(highlight.tag));
+  //     }
+  //   }
+
+  //   if (uniqueTags.size === 1) {
+  //     return;
+  //   }
+
+  //   // const tags: string[] = Array.from(uniqueTags).sort();
+  //   const tags: string[] = Array.from(uniqueTags);
+  //   tags.sort();
+
+  //   renderFilterTagElement(filterTagElement, tags);
+
+  //   // filterTagAllOptionElement.setAttribute("value", "");
+
+  //   // filterTagElement.innerHTML = tags
+  //   //   .map((t: string): string => {
+  //   //     const label: string = t === "" ? ALL_TAGS : t;
+  //   //     return `<option value="${t}" ${t === filterTagElement.value ? "selected" : ""}>${label}</option>`;
+  //   //   })
+  //   //   .join("");
+  // }
 
   /**
    * Filters file highlights by an optional tag query and/or text search query.
@@ -185,17 +276,19 @@ const ALL_TAGS: string = "All Tags";
   function filterFileHighlights(): FileHighlightsViewModel[] {
     // Nothing to filter.
     if (!(tagNeedle || searchNeedle)) {
-      return fileHighlightsViewModel;
+      return webviewViewModel.fileHighlights;
     }
 
-    const fileHighlightsViewModelLength: number = fileHighlightsViewModel.length;
+    const fileHighlights: FileHighlightsViewModel[] = webviewViewModel.fileHighlights;
+
+    const fileHighlightsViewModelLength: number = fileHighlights.length;
     const result: FileHighlightsViewModel[] = [];
 
     // Tag-only filtering.
     if (tagNeedle && !searchNeedle) {
       for (let i: number = 0; i < fileHighlightsViewModelLength; i++) {
         // oxlint-disable-next-line typescript/no-non-null-assertion
-        const file: FileHighlightsViewModel = fileHighlightsViewModel[i]!;
+        const file: FileHighlightsViewModel = fileHighlights[i]!;
         const highlights: HighlightViewModel[] = file.highlights;
         const matches: HighlightViewModel[] = [];
 
@@ -223,7 +316,7 @@ const ALL_TAGS: string = "All Tags";
     if (!tagNeedle) {
       for (let i: number = 0; i < fileHighlightsViewModelLength; i++) {
         // oxlint-disable-next-line typescript/no-non-null-assertion
-        const file: FileHighlightsViewModel = fileHighlightsViewModel[i]!;
+        const file: FileHighlightsViewModel = fileHighlights[i]!;
 
         // A matching path means every highlight in the file matches.
         if (file.filePathSearch.includes(searchNeedle)) {
@@ -257,7 +350,7 @@ const ALL_TAGS: string = "All Tags";
     // Both tag and search filtering.
     for (let i: number = 0; i < fileHighlightsViewModelLength; i++) {
       // oxlint-disable-next-line typescript/no-non-null-assertion
-      const file: FileHighlightsViewModel = fileHighlightsViewModel[i]!;
+      const file: FileHighlightsViewModel = fileHighlights[i]!;
       // oxlint-disable-next-line legibility/no-repeated-collection-search
       const fileMatches: boolean = file.filePathSearch.includes(searchNeedle);
       const highlights: HighlightViewModel[] = file.highlights;
@@ -366,7 +459,7 @@ const ALL_TAGS: string = "All Tags";
     cardCountElement.textContent = "" + filteredFileHighlights.length;
 
     if (filteredFileHighlights.length === 0) {
-      if (fileHighlightsViewModel.length === 0) {
+      if (webviewViewModel.fileHighlights.length === 0) {
         // cardListElement.innerHTML = CARD_LIST_NO_HIGHLIGHTS_HTML;
         cardListEmptyResultsElement.style.display = "none";
         cardListEmptyHighlightsElement.style.display = "flex";
@@ -502,19 +595,15 @@ const ALL_TAGS: string = "All Tags";
     render();
   });
 
-  messenger.onNotification(
-    updateWebViewNotificationType,
-    (params: FileHighlightsViewModel[]): void => {
-      console.log(
-        "[Code Mark Highlighter] updateWebViewNotificationType - Received from extension: ",
-        params,
-      );
-      fileHighlightsViewModel = params;
-      console.log("fileHighlightsViewModel: ", fileHighlightsViewModel);
-      rebuildTagFilter();
-      render();
-    },
-  );
+  messenger.onNotification(updateWebViewNotificationType, (params: WebviewViewModel): void => {
+    console.log(
+      "[Code Mark Highlighter] updateWebViewNotificationType - Received from extension: ",
+      params,
+    );
+    webviewViewModel = params;
+    renderFilterTagElement();
+    render();
+  });
   messenger.start();
 
   //Notify extension we're ready

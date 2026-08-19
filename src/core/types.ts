@@ -159,6 +159,11 @@ export interface FileHighlightsViewModel {
   highlights: HighlightViewModel[];
 }
 
+export interface WebviewViewModel {
+  sortedTags: readonly string[] | null;
+  fileHighlights: FileHighlightsViewModel[];
+}
+
 export interface ColorOption {
   label: string;
   emoji: string;
