@@ -14,5 +14,5 @@ function log(...args) {
 
 
 
-log(legibility.configs);
+log(legibility.configs["oxlint/strict"]);
 

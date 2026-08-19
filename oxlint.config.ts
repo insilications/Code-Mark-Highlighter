@@ -139,6 +139,7 @@ export default defineConfig({
     "legibility/require-executable-shebang": "warn",
     "legibility/require-filename-matches-dirname": "off",
     "legibility/no-unmatched-comments": "off",
+    "legibility/no-automated-comment-attribution": "off",
     "max-lines-per-function": "off",
     "no-array-constructor": "error",
     "no-case-declarations": "error",
