@@ -48,7 +48,11 @@ export class HighlightRepository {
   private sortedFilePathsCache: string[] | null = null;
 
   /** Map of the current tags to the number of highlights that use each tag. */
-  private readonly currentTagsCache: Map<string, number> = new Map<string, number>();
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+  private readonly currentTagsCache: Record<string, number> = Object.create(null) as Record<
+    string,
+    number
+  >;
 
   /**
    * If an existing FileHighlights instance is supplied, this repository takes ownership of it.
@@ -64,15 +68,14 @@ export class HighlightRepository {
       // oxlint-disable-next-line legibility/no-single-use-renaming-alias
       const highlightsLength: number = highlights.length;
       // The following pattern is actually `O(n)`, not `O(n^2)`.
-      // The `legibility/no-quadratic-patterns` rule tends to flag lexical nesting depth.
+      // The `legibility/no-quadratic-patterns` rule tends to flag mere lexical nesting depth.
       // oxlint-disable-next-line legibility/no-quadratic-patterns
       for (let i: number = 0; i < highlightsLength; i++) {
         // oxlint-disable-next-line typescript/no-non-null-assertion
         const tag: string = highlights[i]!.tag;
-        const currentCount: number | undefined = this.currentTagsCache.get(tag);
-
+        const currentCount: number | undefined = this.currentTagsCache[tag];
         // oxlint-disable-next-line no-undefined
-        this.currentTagsCache.set(tag, currentCount === undefined ? 1 : currentCount + 1);
+        this.currentTagsCache[tag] = currentCount === undefined ? 1 : currentCount + 1;
       }
     }
     console.log("HighlightRepository - this.currentTagsCache: ", this.currentTagsCache);
@@ -137,9 +140,9 @@ export class HighlightRepository {
    */
   public addHighlight(filePath: string, highlight: Highlight): number {
     const tag: string = highlight.tag;
-    const currentCount: number | undefined = this.currentTagsCache.get(tag);
+    const currentCount: number | undefined = this.currentTagsCache[tag];
     // oxlint-disable-next-line no-undefined
-    this.currentTagsCache.set(tag, currentCount === undefined ? 1 : currentCount + 1);
+    this.currentTagsCache[tag] = currentCount === undefined ? 1 : currentCount + 1;
     console.log("addHighlight - this.currentTagsCache: ", this.currentTagsCache);
 
     const highlights: Highlight[] | undefined = this.fileHighlights.get(filePath);
