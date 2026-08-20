@@ -278,14 +278,15 @@ declare function acquireVsCodeApi(): VsCodeApi;
     return result;
   }
 
-  function renderCard(filePath: string, highlight: HighlightViewModel): HTMLDivElement {
+  function renderCard(filePath: string, highlight: HighlightViewModel): DocumentFragment {
     const tagName: string = highlight.tag;
     const tagColor: string = highlight.color;
 
-    const cardsTemplateClone: Node = cardsTemplate.content.cloneNode(true);
     // oxlint-disable typescript/no-unsafe-type-assertion
-    const cardElement: HTMLDivElement = (cardsTemplateClone as DocumentFragment)
-      .firstElementChild as HTMLDivElement;
+    const cardsTemplateClone: DocumentFragment = cardsTemplate.content.cloneNode(
+      true,
+    ) as DocumentFragment;
+    const cardElement: HTMLDivElement = cardsTemplateClone.firstElementChild as HTMLDivElement;
     cardElement.dataset.id = highlight.id;
     cardElement.style.borderColor = tagColor;
 
@@ -306,7 +307,7 @@ declare function acquireVsCodeApi(): VsCodeApi;
       cardTagElement.remove();
     }
 
-    return cardElement;
+    return cardsTemplateClone;
   }
 
   function render(): void {
@@ -329,7 +330,7 @@ declare function acquireVsCodeApi(): VsCodeApi;
     }
 
     // const renderedCardsFragment: DocumentFragment = document.createDocumentFragment();
-    const renderedCards: HTMLDivElement[] = [];
+    const renderedCards: DocumentFragment[] = [];
     for (const filehighlight of filteredFileHighlights) {
       // oxlint-disable-next-line legibility/no-single-use-renaming-alias
       const filePath: string = filehighlight.filePath;

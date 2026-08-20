@@ -1,0 +1,108 @@
+id: first-rule
+language: JavaScript
+rule:
+  pattern: "const $A = $B, $C = $D, $EEE = $F,\
+    { $P1, $P2,\
+    $P3,\
+    $P4,\
+    $P5,\
+    $P6,\
+    $P7} = $EEE;"
+
+
+
+id: first-rule
+language: JavaScript
+rule:
+  pattern:
+    selector: variable_declarator
+    context: "const {\
+      guid: $GUID,\
+      features: $FEATURES = [],\
+      features2: $FEATURES2 = null,\
+      features3: $FEATURES3 = [],\
+      features4: $FEATURES4 = null,\
+      whitelist: $WHITELIST = null,\
+      isOrgTrialOwner: $IS_ORG_TRIAL_OWNER = !1\
+      } = $SOURCE;"
+  inside:
+    pattern: "const phoneHome = $_PHONE_HOME;"
+    stopBy: "end"
+constraints:
+  ARG:
+    kind: number
+
+
+
+id: first-rule
+language: JavaScript
+rule:
+  pattern:
+    selector: variable_declarator
+    context: "const {\
+      guid: $GUID,\
+      features: $FEATURES = [],\
+      licenseExpiresAt: $LICENSE_EXPIRES_AT = null,\
+      licensedFeatures: $LICENSED_FEATURES = [],\
+      proAccessState: $PRO_ACCESS_STATE = null,\
+      whitelist: $WHITELIST = null,\
+      isOrgTrialOwner: $IS_ORG_TRIAL_OWNER = !1\
+      } = $SOURCE_IDENTIFIER;"
+  inside:
+    pattern: "const phoneHome = $_;"
+    stopBy: "end"
+constraints:
+  GUID:
+    kind: identifier
+  FEATURES:
+    kind: identifier
+  LICENSE_EXPIRES_AT:
+    kind: identifier
+  LICENSED_FEATURES:
+    kind: identifier
+  PRO_ACCESS_STATE:
+    kind: identifier
+  WHITELIST:
+    kind: identifier
+  IS_ORG_TRIAL_OWNER:
+    kind: identifier
+  SOURCE_IDENTIFIER:
+    kind: identifier
+
+
+
+
+
+
+id: first-rule
+language: JavaScript
+rule:
+  pattern: "let $REG_STATUS = $_.registrationStatus.UNREGISTERED;"
+  precedes:
+    pattern:
+      selector: switch_statement
+      context: "switch ($A) { $$$B }"
+    stopBy: "end"
+      # selector: lexical_declaration
+      # context: "let $REG_STATUS = $_.registrationStatus.UNREGISTERED;"
+  inside:
+    pattern: "const phoneHome = $_;"
+    stopBy: "end"
+
+
+
+
+id: first-rule
+language: JavaScript
+rule:
+  pattern: "switch ($A) { $$$B }"
+  follows:
+    pattern:
+      selector: lexical_declaration
+      context: "let $REG_STATUS = $_.registrationStatus.UNREGISTERED;"
+    stopBy: "end"
+      # selector: lexical_declaration
+      # context: "let $REG_STATUS = $_.registrationStatus.UNREGISTERED;"
+  inside:
+    pattern: "const phoneHome = $_;"
+    stopBy: "end"
