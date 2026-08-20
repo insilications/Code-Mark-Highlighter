@@ -178,6 +178,7 @@ body {
   justify-content: center;
   min-width: 0;
 }
+
 .card-tag {
   flex-shrink: 0;
   max-width: 100%;
@@ -191,6 +192,7 @@ body {
   border-radius: 4px;
   opacity: 0.9;
 }
+
 .card-file {
   /* max-width: 120px; */
   min-width: 0;

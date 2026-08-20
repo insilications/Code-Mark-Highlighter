@@ -73,7 +73,7 @@ export default defineConfig({
     "import/no-cycle": [
       "error",
       {
-        maxDepth: 3,
+        maxDepth: 2,
       },
     ],
     "jsdoc/require-param": "off",
