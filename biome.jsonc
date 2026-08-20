@@ -3,7 +3,6 @@
   "assist": {
     "actions": {
       "preset": "all",
-      "recommended": true,
       "source": {
         "noDuplicateClasses": "on",
         "organizeImports": "off",
@@ -12,7 +11,9 @@
         "useSortedInterfaceMembers": "on",
         "useSortedKeys": "on",
         "useSortedPackageJson": "off",
-        "useSortedProperties": "on"
+        "useSortedProperties": "on",
+        "useSortedSelectionSet": "on",
+        "useSortedTypeFields": "on"
       }
     },
     "enabled": true,
@@ -662,6 +663,7 @@
         "noUnnecessaryTemplateExpression": "error",
         // Disallow + operations with operands that are known to be unsafe. See https://biomejs.dev/linter/rules/no-unsafe-plus-operands
         "noUnsafePlusOperands": "on",
+        "noUnsafeTypeAssertion": "off",
         // Disallow dependencies with untrusted licenses. See https://biomejs.dev/linter/rules/no-untrusted-licenses
         "noUntrustedLicenses": "on",
         // Reports CSS class selectors that are never referenced in any JSX or HTML file. See https://biomejs.dev/linter/rules/no-unused-classes

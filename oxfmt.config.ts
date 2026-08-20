@@ -41,7 +41,7 @@ export default defineConfig({
   semi: true,
   singleAttributePerLine: false,
   singleQuote: false,
-  sortImports: { ignoreCase: true, newlinesBetween: true, order: "asc" },
+  sortImports: { ignoreCase: true, newlinesBetween: true, order: "asc", partitionByComment: true },
   sortPackageJson: { sortScripts: true },
   tabWidth: 2,
   trailingComma: "all",

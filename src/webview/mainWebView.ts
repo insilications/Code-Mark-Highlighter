@@ -1,8 +1,8 @@
 // oxlint-disable legibility/no-quadratic-patterns max-depth legibility/max-control-flow-depth
 
 import { HOST_EXTENSION } from "vscode-messenger-common";
-import type { VsCodeApi } from "vscode-messenger-webview";
 import { Messenger } from "vscode-messenger-webview";
+import type { VsCodeApi } from "vscode-messenger-webview";
 
 import {
   jumpToHighlightNotificationType,
@@ -17,46 +17,39 @@ declare function acquireVsCodeApi(): VsCodeApi;
 
 // This will be run within the WebView itself and cannot access the main VS Code APIs directly.
 ((): void => {
-  // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-  let webviewViewModel: WebviewViewModel = {} as WebviewViewModel;
   const vscode: VsCodeApi = acquireVsCodeApi();
   const messenger = new Messenger(vscode);
 
-  let searchNeedle: string = "";
-  let tagNeedle: string = "";
-
-  // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+  // oxlint-disable typescript/no-unsafe-type-assertion
+  let webviewViewModel: WebviewViewModel = {} as WebviewViewModel;
   const cardsTemplate: HTMLTemplateElement = document.getElementById(
     "cards",
   ) as HTMLTemplateElement;
-  // oxlint-disable-next-line typescript/no-unsafe-type-assertion
   const cardListElement: HTMLDivElement = document.getElementById("list") as HTMLDivElement;
-  // oxlint-disable-next-line typescript/no-unsafe-type-assertion
   const cardListEmptyHighlightsElement: HTMLDivElement = document.getElementById(
     "empty-highlights",
   ) as HTMLDivElement;
-  // oxlint-disable-next-line typescript/no-unsafe-type-assertion
   const cardListEmptyResultsElement: HTMLDivElement = document.getElementById(
     "empty-results",
   ) as HTMLDivElement;
-  // oxlint-disable-next-line typescript/no-unsafe-type-assertion
   const cardCountElement: HTMLSpanElement = document.getElementById("count") as HTMLSpanElement;
-  // oxlint-disable-next-line typescript/no-unsafe-type-assertion
   const statsBarElement: HTMLDivElement = document.getElementById("stats-bar") as HTMLDivElement;
-  // oxlint-disable-next-line typescript/no-unsafe-type-assertion
   const statsTotalElement: HTMLSpanElement = document.getElementById(
     "stat-total",
   ) as HTMLSpanElement;
-  // oxlint-disable-next-line typescript/no-unsafe-type-assertion
   const statsFilesElement: HTMLSpanElement = document.getElementById(
     "stat-files",
   ) as HTMLSpanElement;
-  // oxlint-disable-next-line typescript/no-non-null-assertion typescript/no-unsafe-type-assertion
+  // oxlint-disable-next-line typescript/no-non-null-assertion
   const filterTagElement: HTMLSelectElement = document.getElementById(
     "filter-tag",
   )! as HTMLSelectElement;
-  // oxlint-disable-next-line typescript/no-non-null-assertion typescript/no-unsafe-type-assertion
+  // oxlint-disable-next-line typescript/no-non-null-assertion
   const searchEl: HTMLInputElement = document.getElementById("search")! as HTMLInputElement;
+  // oxlint-enable typescript/no-unsafe-type-assertion
+
+  let searchNeedle: string = "";
+  let tagNeedle: string = "";
 
   function renderFilterTagElement(): void {
     const sortedTags: readonly string[] | null = webviewViewModel.sortedTags;
@@ -290,24 +283,22 @@ declare function acquireVsCodeApi(): VsCodeApi;
     const tagColor: string = highlight.color;
 
     const cardsTemplateClone: Node = cardsTemplate.content.cloneNode(true);
-    // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+    // oxlint-disable typescript/no-unsafe-type-assertion
     const cardElement: HTMLDivElement = (cardsTemplateClone as DocumentFragment)
       .firstElementChild as HTMLDivElement;
     cardElement.dataset.id = highlight.id;
     cardElement.style.borderColor = tagColor;
 
-    // oxlint-disable-next-line typescript/no-non-null-assertion typescript/no-unsafe-type-assertion
+    // oxlint-disable typescript/no-non-null-assertion
     const cardSnippetElement: HTMLDivElement = cardElement.children[1]! as HTMLDivElement;
     cardSnippetElement.textContent = highlight.codeSnippetDisplay;
 
-    // oxlint-disable-next-line typescript/no-non-null-assertion typescript/no-unsafe-type-assertion
     const cardTopElement: HTMLDivElement = cardElement.children[0]! as HTMLDivElement;
-    // oxlint-disable-next-line typescript/no-non-null-assertion typescript/no-unsafe-type-assertion
     const cardFileElement: HTMLSpanElement = cardTopElement.children[2]! as HTMLSpanElement;
     cardFileElement.title = filePath;
     cardFileElement.textContent = filePath;
-    // oxlint-disable-next-line typescript/no-non-null-assertion typescript/no-unsafe-type-assertion
     const cardTagElement: HTMLSpanElement = cardTopElement.children[0]! as HTMLSpanElement;
+    // oxlint-enable typescript/no-unsafe-type-assertion typescript/no-non-null-assertion
     if (tagName.length > 0) {
       cardTagElement.textContent = tagName;
       cardTagElement.style.color = tagColor;
