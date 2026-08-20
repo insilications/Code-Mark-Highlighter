@@ -3,7 +3,6 @@ import { Messenger, type MessengerDiagnostic } from "vscode-messenger";
 
 import { ACTIVATED_CONTEXT } from "@/core/constants";
 import { HighlightRepository } from "@/core/highlightRepository";
-import type { HighlightStore } from "@/core/types";
 
 import { highlightCodeQuick } from "./commands";
 import { disposeAllDecorations } from "./decorationManager";

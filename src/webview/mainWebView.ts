@@ -12,22 +12,8 @@ import {
 import type { FileHighlightsViewModel, HighlightViewModel, WebviewViewModel } from "@/core/types";
 
 import "./mainWebView.css";
-import { esc } from "./utils";
 
 declare function acquireVsCodeApi(): VsCodeApi;
-
-// const ALL_TAGS: string = "All Tags";
-
-// const CARD_LIST_NO_HIGHLIGHTS_HTML: string = `<div class="empty">
-//           <div class="empty-icon">✨</div>
-//           <div class="empty-title">No highlights yet</div>
-//           <div class="empty-sub">Select code → right-click<br>→ <strong>Code Mark: Highlight Code</strong></div>
-//         </div>`;
-// const CARD_LIST_NO_RESULTS_HTML: string = `<div class="empty">
-//           <div class="empty-icon">🔍</div>
-//           <div class="empty-title">No results</div>
-//           <div class="empty-sub">Try a different search or filter.</div>
-//         </div>`;
 
 // This will be run within the WebView itself and cannot access the main VS Code APIs directly.
 ((): void => {

@@ -43,6 +43,8 @@
 body {
   display: flex;
   flex-direction: column;
+  width: 100%;
+  min-width: 0;
   height: 100vh;
   overflow-x: hidden;
   font-family: var(--dm-font);
@@ -57,6 +59,7 @@ body {
   flex-shrink: 0;
   gap: 8px;
   align-items: center;
+  min-width: 0;
   padding: 12px 12px 8px;
   border-bottom: 1px solid var(--dm-border);
 }
@@ -82,6 +85,7 @@ body {
   display: flex;
   flex-shrink: 0;
   gap: 6px;
+  min-width: 0;
   padding: 8px 12px;
   border-bottom: 1px solid var(--dm-border);
 }
@@ -135,17 +139,22 @@ body {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  justify-content: center;
+  min-width: 0;
   padding: 8px 10px 8px 10px;
   margin: 3px 3px;
   cursor: pointer;
   background: var(--dm-input-bg);
-  border: 1px solid var(--dm-border);
+  border-color: var(--dm-border);
+  border-style: solid;
+  border-width: 1px;
   border-radius: var(--dm-radius);
   transition:
     background 0.12s,
     transform 0.1s;
   animation: fadeIn 0.2s ease;
 }
+
 .card:hover {
   background: var(--dm-hover);
 }
@@ -163,12 +172,15 @@ body {
   display: flex;
   flex-wrap: nowrap;
   gap: 2px;
+  place-content: center;
   align-content: center;
   align-items: center;
   justify-content: center;
+  min-width: 0;
 }
 .card-tag {
   flex-shrink: 0;
+  max-width: 100%;
   padding: 1px 6px;
   font-size: 10px;
   font-weight: 700;
@@ -180,7 +192,9 @@ body {
   opacity: 0.9;
 }
 .card-file {
-  max-width: 120px;
+  /* max-width: 120px; */
+  min-width: 0;
+  max-width: 100%;
   margin-left: auto;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -190,6 +204,8 @@ body {
 }
 
 .card-snippet {
+  min-width: 0;
+  max-width: 100%;
   padding: 6px 3px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -205,6 +221,7 @@ body {
 .card-actions {
   display: flex;
   gap: 1px;
+  min-width: 0;
   opacity: 0;
   transition: opacity 0.15s;
 }
@@ -246,6 +263,7 @@ body {
   gap: 10px;
   align-items: center;
   justify-content: center;
+  min-width: 0;
   padding: 40px 20px;
   color: var(--dm-muted);
   text-align: center;
@@ -268,6 +286,7 @@ body {
   display: none;
   flex-shrink: 0;
   gap: 8px;
+  min-width: 0;
   padding: 6px 12px;
   font-size: 10px;
   color: var(--dm-muted);
@@ -277,4 +296,5 @@ body {
   display: flex;
   gap: 3px;
   align-items: center;
+  min-width: 0;
 }

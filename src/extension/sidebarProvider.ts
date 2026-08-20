@@ -146,7 +146,8 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
 
   private buildHtmlForWebView(): string {
     console.log("[Code Mark Highlighter] buildHtmlForWebView - Building HTML for WebView.");
-    const htmlContent: string = fs.readFileSync(this.mainWebViewHtmlUri.fsPath, "utf-8");
-    return htmlContent.replaceAll("#NNNN#", getNonce());
+    return fs
+      .readFileSync(this.mainWebViewHtmlUri.fsPath, "utf-8")
+      .replaceAll("#NNNN#", getNonce());
   }
 }
