@@ -69,23 +69,8 @@ declare function acquireVsCodeApi(): VsCodeApi;
   const filterTagElement: HTMLSelectElement = document.getElementById(
     "filter-tag",
   )! as HTMLSelectElement;
-  // const filterTagAllOptionElement: HTMLOptionElement =
-  //   // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-  //   filterTagElement.firstElementChild as HTMLOptionElement;
   // oxlint-disable-next-line typescript/no-non-null-assertion typescript/no-unsafe-type-assertion
   const searchEl: HTMLInputElement = document.getElementById("search")! as HTMLInputElement;
-
-  function compareTags(a: string, b: string): number {
-    if (a < b) {
-      return -1;
-    }
-
-    if (a > b) {
-      return 1;
-    }
-
-    return 0;
-  }
 
   function renderFilterTagElement(): void {
     const sortedTags: readonly string[] | null = webviewViewModel.sortedTags;
@@ -111,7 +96,14 @@ declare function acquireVsCodeApi(): VsCodeApi;
       // oxlint-disable-next-line typescript/no-non-null-assertion
       const tag: string = sortedTags[tagIndex]!;
 
-      const comparison: number = compareTags(option.value, tag);
+      const optionValue: string = option.value;
+
+      let comparison: number = 0;
+      if (optionValue < tag) {
+        comparison = -1;
+      } else if (optionValue > tag) {
+        comparison = 1;
+      }
 
       if (comparison === 0) {
         // The tag already exists in the correct position.
@@ -164,82 +156,6 @@ declare function acquireVsCodeApi(): VsCodeApi;
       }
     }
   }
-
-  // function renderFilterTagElement(newTags: string[]): void {
-  //   // 1. Preserve state: Mutation will shift the selected index underneath us.
-  //   // oxlint-disable-next-line legibility/no-single-use-renaming-alias
-  //   const previousValue: string = filterTagElement.value;
-
-  //   // The first option (index 0) is the static "All Tags" element.
-  //   // Our dynamic buffer starts at index 1.
-  //   const targetTotalLength: number = newTags.length + 1;
-
-  //   // 2. In-place overwrite (Avoid allocation/GC churn)
-  //   for (let i: number = 0; i < newTags.length; i++) {
-  //     // oxlint-disable-next-line typescript/no-non-null-assertion
-  //     const tag: string = newTags[i]!;
-  //     const optionIndex: number = i + 1;
-
-  //     if (optionIndex < filterTagElement.options.length) {
-  //       // Node exists: overwrite its memory footprint
-  //       // oxlint-disable-next-line typescript/no-non-null-assertion
-  //       const opt: HTMLOptionElement = filterTagElement.options[optionIndex]!;
-
-  //       // Strict equality check prevents triggering unnecessary DOM invalidation flags
-  //       if (opt.value !== tag) {
-  //         opt.value = tag;
-  //         opt.textContent = tag;
-  //       }
-  //     } else {
-  //       // Buffer too small: allocate a new node
-  //       // Note: new Option(text, value) is a fast-path constructor in V8/Blink
-  //       filterTagElement.add(new Option(tag, tag));
-  //     }
-  //   }
-
-  //   // 3. Truncate excess (Freeing memory)
-  //   // Mutating the 'length' property on an HTMLOptionsCollection is heavily
-  //   // optimized in browser engines. It immediately strips trailing nodes.
-  //   if (filterTagElement.options.length > targetTotalLength) {
-  //     filterTagElement.options.length = targetTotalLength;
-  //   }
-
-  //   // 4. Restore state: Re-apply the selection, or fallback to index 0 if
-  //   // the previously selected tag no longer exists in the new array.
-  //   filterTagElement.value = previousValue;
-  //   if (filterTagElement.selectedIndex === -1) {
-  //     filterTagElement.selectedIndex = 0;
-  //   }
-  // }
-
-  // function rebuildTagFilter(): void {
-  //   const uniqueTags = new Set<string>();
-
-  //   for (const file of webviewViewModel) {
-  //     for (const highlight of file.highlights) {
-  //       uniqueTags.add(esc(highlight.tag));
-  //     }
-  //   }
-
-  //   if (uniqueTags.size === 1) {
-  //     return;
-  //   }
-
-  //   // const tags: string[] = Array.from(uniqueTags).sort();
-  //   const tags: string[] = Array.from(uniqueTags);
-  //   tags.sort();
-
-  //   renderFilterTagElement(filterTagElement, tags);
-
-  //   // filterTagAllOptionElement.setAttribute("value", "");
-
-  //   // filterTagElement.innerHTML = tags
-  //   //   .map((t: string): string => {
-  //   //     const label: string = t === "" ? ALL_TAGS : t;
-  //   //     return `<option value="${t}" ${t === filterTagElement.value ? "selected" : ""}>${label}</option>`;
-  //   //   })
-  //   //   .join("");
-  // }
 
   /**
    * Filters file highlights by an optional tag query and/or text search query.
@@ -405,10 +321,8 @@ declare function acquireVsCodeApi(): VsCodeApi;
   // }
 
   function renderCard(filePath: string, highlight: HighlightViewModel): HTMLDivElement {
-    // const snippet = esc(highlight.codeSnippetDisplay.split("\\n").slice(0, 12).join("\\n"));
-    const snippet: string = highlight.codeSnippetDisplay.split("\\n").slice(0, 12).join("\\n");
-    const id: string = esc(highlight.id);
-    // const tagName: string = esc(highlight.tag);
+    const id: string = highlight.id;
+    const tagName: string = highlight.tag;
     // const fileName: string = esc(filePath);
     // const tagColor: string = esc(highlight.color);
     // oxlint-disable-next-line legibility/no-single-use-renaming-alias
@@ -421,6 +335,23 @@ declare function acquireVsCodeApi(): VsCodeApi;
     const cardElement: HTMLDivElement = (cardsTemplateClone as DocumentFragment).querySelector(
       ".card",
     ) as HTMLDivElement;
+
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+    const cardElement2: HTMLDivElement = (cardsTemplateClone as DocumentFragment)
+      .firstElementChild as HTMLDivElement;
+
+    // oxlint-disable-next-line typescript/no-non-null-assertion typescript/no-unsafe-type-assertion
+    const cardTopElement2: HTMLDivElement = cardElement2.children[0]! as HTMLDivElement;
+
+    // oxlint-disable-next-line typescript/no-non-null-assertion typescript/no-unsafe-type-assertion
+    const cardTagElement2: HTMLSpanElement = cardTopElement2.children[0]! as HTMLSpanElement;
+
+    // oxlint-disable-next-line typescript/no-non-null-assertion typescript/no-unsafe-type-assertion
+    const cardFileElement2: HTMLSpanElement = cardTopElement2.children[2]! as HTMLSpanElement;
+
+    // oxlint-disable-next-line typescript/no-non-null-assertion typescript/no-unsafe-type-assertion
+    const cardSnippetElement2: HTMLDivElement = cardElement2.children[1]! as HTMLDivElement;
+
     // oxlint-disable-next-line typescript/no-unsafe-type-assertion
     const cardFileElement: HTMLSpanElement = cardElement.querySelector(
       ".card-file",
@@ -434,7 +365,7 @@ declare function acquireVsCodeApi(): VsCodeApi;
     cardElement.style.borderColor = tagColor;
     cardFileElement.title = filePath;
     cardFileElement.textContent = filePath;
-    cardSnippetElement.textContent = snippet;
+    cardSnippetElement.textContent = highlight.codeSnippetDisplay;
 
     return cardElement;
 

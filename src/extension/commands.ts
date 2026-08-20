@@ -58,7 +58,7 @@ export function highlightCodeQuick(sidebar: SidebarProvider): void {
   highlightRepository.addHighlight(filePath, {
     id: crypto.randomUUID(),
     codeSnippet,
-    codeSnippetDisplay: litedent(codeSnippet),
+    codeSnippetDisplay: litedent(codeSnippet).split("\n").slice(0, 12).join("\n"),
     codeHash: hashText(codeSnippet),
     tag: "",
     color: "#f7db00",

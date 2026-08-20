@@ -157,13 +157,15 @@ export class HighlightRepository {
    */
   public addHighlight(filePath: string, highlight: Highlight): number {
     const tag: string = highlight.tag;
-    const currentCount: number | undefined = this.tagsCountCache.get(tag);
-    // oxlint-disable-next-line no-undefined
-    if (currentCount === undefined) {
-      this.sortedTagsDirty = true;
-      this.tagsCountCache.set(tag, 1);
-    } else {
-      this.tagsCountCache.set(tag, currentCount + 1);
+    if (tag.length > 0) {
+      const currentCount: number | undefined = this.tagsCountCache.get(tag);
+      // oxlint-disable-next-line no-undefined
+      if (currentCount === undefined) {
+        this.sortedTagsDirty = true;
+        this.tagsCountCache.set(tag, 1);
+      } else {
+        this.tagsCountCache.set(tag, currentCount + 1);
+      }
     }
     console.log("addHighlight - this.tagsCountCache: ", this.tagsCountCache);
 
@@ -171,7 +173,9 @@ export class HighlightRepository {
 
     // oxlint-disable-next-line no-undefined
     if (highlights !== undefined) {
-      return insertHighlightSorted(highlights, highlight);
+      const index: number = insertHighlightSorted(highlights, highlight);
+      saveHighlights(this.fileHighlights);
+      return index;
     }
 
     this.fileHighlights.set(filePath, [highlight]);
