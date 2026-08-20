@@ -58,6 +58,7 @@ function inlineWebviewPlugin(): Plugin {
     apply: "build",
     enforce: "post",
 
+    // oxlint-disable-next-line legibility/no-unnecessary-async
     async generateBundle(_options: NormalizedOutputOptions, bundle: OutputBundle): Promise<void> {
       // oxlint-disable-next-line unicorn/no-array-callback-reference
       const entryChunk: OutputChunk | undefined = Object.values(bundle).find(isMainWebViewEntry);
@@ -66,12 +67,9 @@ function inlineWebviewPlugin(): Plugin {
         this.error('Could not find the "mainWebView" entry chunk.');
       }
 
-      /*
-       * `viteMetadata` is intentionally optional in Vite's types.
-       *
-       * Treat missing metadata equivalently to an empty CSS set; the check
-       * immediately below then reports a meaningful build error.
-       */
+      // `viteMetadata` is intentionally optional in Vite's types.
+      // Treat missing metadata equivalently to an empty CSS set.
+      // The check immediately below then reports a meaningful build error.
       const cssFileNames: string[] = [...(entryChunk.viteMetadata?.importedCss ?? [])];
       if (cssFileNames.length === 0) {
         this.error('No CSS was emitted for the "mainWebView" entry chunk.');
@@ -91,25 +89,18 @@ function inlineWebviewPlugin(): Plugin {
         }
       }
 
-      let javascript: string = `${entryChunk.code}\n//# sourceURL=${entryChunk.fileName}`;
-      let css: string = cssParts.join("\n");
+      // The generated content will be embedded directly inside HTML <script> and <style> elements.
+      // Escape literal closing-tag sequences so content cannot accidentally terminate
+      // its containing element.
+      const css: string = cssParts.join("\n").replaceAll(/<\/style/gi, "<\\/style");
+      const javascript: string = entryChunk.code.replaceAll(/<\/script/gi, "<\\/script");
 
-      /*
-       * The generated content will be embedded directly inside HTML <script>
-       * and <style> elements. Escape literal closing-tag sequences so content
-       * cannot accidentally terminate its containing element.
-       */
-      javascript = javascript.replaceAll(/<\/script/gi, "<\\/script");
-      css = css.replaceAll(/<\/style/gi, "<\\/style");
-
-      // Prevent mainWebView.js from being written to out/.
+      // Prevent mainWebView.js from being written to `out/`.
       // oxlint-disable-next-line typescript/no-dynamic-delete
       delete bundle[entryChunk.fileName];
 
-      /*
-       * mainWebView.html isn't part of the normal module graph, so make it an
-       * explicit watch dependency for `vite build --watch`.
-       */
+      // `mainWebview.html` isn't part of the normal module graph, so make it an
+      // explicit watch dependency for `vite build --watch`.
       this.addWatchFile(webviewHtmlPath);
 
       let html: string = await readFile(webviewHtmlPath, "utf8");
@@ -152,31 +143,25 @@ export default defineConfig(({ mode }: ConfigEnv): UserConfig => {
     },
     build: {
       outDir: "out",
-      /*
-       * Both independent builds write to out/, so neither should erase the
-       * result produced by the other.
-       */
+      // Both independent builds write to `out/`, so neither should erase
+      // the result produced by the other.
       emptyOutDir: false,
-      sourcemap: true,
+      sourcemap: "inline",
       minify: false,
       target: "esnext",
       modulePreload: false,
       rolldownOptions: {
         preserveEntrySignatures: isExtension ? "strict" : false,
-        /* VS Code now supports ESM extensions, so we can use "browser" for both the Extension
-         * and the Webview to avoid Node.js polyfills.
-         */
+        // VS Code now supports ESM extensions, so we can use "browser" for both the Extension
+        // and the Webview.
         platform: "browser",
         external: isExtension ? extensionExternal : [],
         tsconfig: isExtension ? "./tsconfig.node.json" : "./tsconfig.webview.json",
         output: {
           format: "esm",
           entryFileNames: "[name].js",
-          /*
-           * Keep extension code splitting available, but force the webview
-           * into a single JS chunk so all generated JavaScript can be placed
-           * inside mainWebView.html.
-           */
+          // Keep extension code splitting available, but force the webview into a single JS chunk
+          // so all generated JavaScript can be placed inside `mainWebview.html`.
           codeSplitting: isExtension,
         },
         optimization: {

@@ -123,7 +123,7 @@ export default defineConfig({
     "legibility/prefer-positive-condition-names": "warn",
     "legibility/require-executable-shebang": "warn",
     "legibility/require-filename-matches-dirname": "off",
-    "legibility/require-jsdoc-multiline-comments": "warn",
+    "legibility/require-jsdoc-multiline-comments": "off",
     "max-lines-per-function": "off",
     "no-array-constructor": "error",
     "no-case-declarations": "error",

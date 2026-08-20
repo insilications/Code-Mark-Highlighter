@@ -12,3 +12,4 @@ vite.config.ts
 .oxlintrc.jsonc
 oxlint.config.ts
 oxfmt.config.ts
+biome.jsonc

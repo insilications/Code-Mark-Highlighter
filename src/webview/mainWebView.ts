@@ -299,89 +299,37 @@ declare function acquireVsCodeApi(): VsCodeApi;
     return result;
   }
 
-  //   function renderCard(filePath: string, highlight: HighlightViewModel): string {
-  //   const snippet = esc(highlight.codeSnippetDisplay.split("\\n").slice(0, 12).join("\\n"));
-  //   const fileName = esc(filePath);
-  //   const tagColor = esc(highlight.color);
-  //   const tagBg = hexToRgba(highlight.color, 0.18);
-
-  //   return `<div class="card" data-id="${esc(highlight.id)}" style="border: 1px solid ${tagColor};">
-  //     <div class="card-top">
-  //       ${highlight.tag ? `<span class="card-tag" style="background:${tagBg};color:${tagColor}">${esc(highlight.tag)}</span>` : ""}
-  //       <div class="card-actions">
-  //         <button class="btn btn-jump">↗ Jump</button>
-  //         <button class="btn btn-tag">🏷 Tag</button>
-  //         <button class="btn btn-color">🎨 Color</button>
-  //         <button class="btn btn-danger btn-delete">🗑</button>
-  //       </div>
-  //       <span class="card-file" title="${fileName}">${fileName}</span>
-  //     </div>
-  //     <div class="card-snippet">${snippet}</div>
-  //   </div>`;
-  // }
-
   function renderCard(filePath: string, highlight: HighlightViewModel): HTMLDivElement {
-    const id: string = highlight.id;
     const tagName: string = highlight.tag;
-    // const fileName: string = esc(filePath);
-    // const tagColor: string = esc(highlight.color);
-    // oxlint-disable-next-line legibility/no-single-use-renaming-alias
     const tagColor: string = highlight.color;
-    // const tagBg: string = hexToRgba(highlight.color, 0.18);
-    // cardsTemplate
-    // const newDiv = document.createElement("div");
+
     const cardsTemplateClone: Node = cardsTemplate.content.cloneNode(true);
     // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-    const cardElement: HTMLDivElement = (cardsTemplateClone as DocumentFragment).querySelector(
-      ".card",
-    ) as HTMLDivElement;
-
-    // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-    const cardElement2: HTMLDivElement = (cardsTemplateClone as DocumentFragment)
+    const cardElement: HTMLDivElement = (cardsTemplateClone as DocumentFragment)
       .firstElementChild as HTMLDivElement;
-
-    // oxlint-disable-next-line typescript/no-non-null-assertion typescript/no-unsafe-type-assertion
-    const cardTopElement2: HTMLDivElement = cardElement2.children[0]! as HTMLDivElement;
-
-    // oxlint-disable-next-line typescript/no-non-null-assertion typescript/no-unsafe-type-assertion
-    const cardTagElement2: HTMLSpanElement = cardTopElement2.children[0]! as HTMLSpanElement;
-
-    // oxlint-disable-next-line typescript/no-non-null-assertion typescript/no-unsafe-type-assertion
-    const cardFileElement2: HTMLSpanElement = cardTopElement2.children[2]! as HTMLSpanElement;
-
-    // oxlint-disable-next-line typescript/no-non-null-assertion typescript/no-unsafe-type-assertion
-    const cardSnippetElement2: HTMLDivElement = cardElement2.children[1]! as HTMLDivElement;
-
-    // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-    const cardFileElement: HTMLSpanElement = cardElement.querySelector(
-      ".card-file",
-    ) as HTMLSpanElement;
-    // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-    const cardSnippetElement: HTMLDivElement = cardElement.querySelector(
-      ".card-snippet",
-    ) as HTMLDivElement;
-
-    cardElement.dataset.id = id;
+    cardElement.dataset.id = highlight.id;
     cardElement.style.borderColor = tagColor;
-    cardFileElement.title = filePath;
-    cardFileElement.textContent = filePath;
+
+    // oxlint-disable-next-line typescript/no-non-null-assertion typescript/no-unsafe-type-assertion
+    const cardSnippetElement: HTMLDivElement = cardElement.children[1]! as HTMLDivElement;
     cardSnippetElement.textContent = highlight.codeSnippetDisplay;
 
-    return cardElement;
+    // oxlint-disable-next-line typescript/no-non-null-assertion typescript/no-unsafe-type-assertion
+    const cardTopElement: HTMLDivElement = cardElement.children[0]! as HTMLDivElement;
+    // oxlint-disable-next-line typescript/no-non-null-assertion typescript/no-unsafe-type-assertion
+    const cardFileElement: HTMLSpanElement = cardTopElement.children[2]! as HTMLSpanElement;
+    cardFileElement.title = filePath;
+    cardFileElement.textContent = filePath;
+    // oxlint-disable-next-line typescript/no-non-null-assertion typescript/no-unsafe-type-assertion
+    const cardTagElement: HTMLSpanElement = cardTopElement.children[0]! as HTMLSpanElement;
+    if (tagName.length > 0) {
+      cardTagElement.textContent = tagName;
+      cardTagElement.style.color = tagColor;
+    } else {
+      cardTagElement.remove();
+    }
 
-    // return `<div class="card" data-id="${esc(highlight.id)}">
-    //   <div class="card-top">
-    //     ${tagName ? `<span class="card-tag">${tagName}</span>` : ""}
-    //     <div class="card-actions">
-    //       <button class="btn btn-jump">↗ Jump</button>
-    //       <button class="btn btn-tag">🏷 Tag</button>
-    //       <button class="btn btn-color">🎨 Color</button>
-    //       <button class="btn btn-danger btn-delete">🗑</button>
-    //     </div>
-    //     <span class="card-file" title="${fileName}">${fileName}</span>
-    //   </div>
-    //   <div class="card-snippet">${snippet}</div>
-    // </div>`;
+    return cardElement;
   }
 
   function render(): void {
@@ -414,7 +362,8 @@ declare function acquireVsCodeApi(): VsCodeApi;
     }
 
     // cardListElement.innerHTML = renderedCards.join("");
-    cardListElement.append(...renderedCards);
+    // cardListElement.append(...renderedCards);
+    cardListElement.replaceChildren(...renderedCards);
 
     // Stats
     const uniqueFiles: number = new Set(
