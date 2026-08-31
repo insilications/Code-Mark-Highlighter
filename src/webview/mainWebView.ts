@@ -311,6 +311,7 @@ declare function acquireVsCodeApi(): VsCodeApi;
   }
 
   function render(): void {
+    renderFilterTagElement();
     const filteredFileHighlights: FileHighlightsViewModel[] = filterFileHighlights();
     // oxlint-disable-next-line prefer-template
     cardCountElement.textContent = "" + filteredFileHighlights.length;
@@ -459,7 +460,6 @@ declare function acquireVsCodeApi(): VsCodeApi;
       params,
     );
     webviewViewModel = params;
-    renderFilterTagElement();
     render();
   });
   messenger.start();
