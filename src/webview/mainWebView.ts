@@ -1,4 +1,4 @@
-// oxlint-disable legibility/no-quadratic-patterns max-depth legibility/max-control-flow-depth
+// oxlint-disable legibility/no-quadratic-patterns
 
 import { HOST_EXTENSION } from "vscode-messenger-common";
 import { Messenger } from "vscode-messenger-webview";
@@ -288,6 +288,7 @@ declare function acquireVsCodeApi(): VsCodeApi;
     ) as DocumentFragment;
     const cardElement: HTMLDivElement = cardsTemplateClone.firstElementChild as HTMLDivElement;
     cardElement.dataset.id = highlight.id;
+    cardElement.dataset.filePath = filePath;
     cardElement.style.borderColor = tagColor;
 
     // oxlint-disable typescript/no-non-null-assertion
@@ -333,10 +334,8 @@ declare function acquireVsCodeApi(): VsCodeApi;
     // const renderedCardsFragment: DocumentFragment = document.createDocumentFragment();
     const renderedCards: DocumentFragment[] = [];
     for (const filehighlight of filteredFileHighlights) {
-      // oxlint-disable-next-line legibility/no-single-use-renaming-alias
-      const filePath: string = filehighlight.filePath;
       for (const highlight of filehighlight.highlights) {
-        renderedCards.push(renderCard(filePath, highlight));
+        renderedCards.push(renderCard(filehighlight.filePath, highlight));
       }
     }
 
@@ -356,90 +355,155 @@ declare function acquireVsCodeApi(): VsCodeApi;
     statsFilesElement.textContent = `${uniqueFiles} file${uniqueFiles === 1 ? "" : "s"}`;
     statsBarElement.style.display = "flex";
 
-    // Bind card events
-    const renderedCardsList: NodeListOf<HTMLDivElement> = cardListElement.querySelectorAll(".card");
-    for (let i: number = 0; i < renderedCardsList.length; i++) {
-      // oxlint-disable-next-line typescript/no-non-null-assertion
-      const renderedCard: HTMLDivElement = renderedCardsList[i]!;
-      // oxlint-disable-next-line legibility/no-single-use-renaming-alias
-      const renderedCardId: string | undefined = renderedCard.dataset.id;
-      for (let j: number = 0; j < filteredFileHighlights.length; j++) {
+    cardListElement.addEventListener("click", (e: PointerEvent): void => {
+      // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+      const targetElement: HTMLElement = e.target as HTMLElement;
+      console.log("Clicked card targetElement:", targetElement);
+
+      const cardElement: HTMLDivElement | null = targetElement.closest("#card");
+      if (cardElement) {
         // oxlint-disable-next-line typescript/no-non-null-assertion
-        const fileHighlight: FileHighlightsViewModel = filteredFileHighlights[j]!;
-        const fileHighlightHighlights: HighlightViewModel[] = fileHighlight.highlights;
-        for (let k: number = 0; k < fileHighlightHighlights.length; k++) {
-          // oxlint-disable-next-line typescript/no-non-null-assertion
-          const highlight: HighlightViewModel = fileHighlightHighlights[k]!;
-          if (highlight.id === renderedCardId) {
-            const card: HTMLDivElement | undefined = renderedCardsList[i];
-            if (card) {
-              card.addEventListener("click", (e: PointerEvent) => {
-                // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-                if ((e.target as HTMLDivElement | null)?.closest(".card-actions")) {
-                  return;
-                }
-                if (e.altKey) {
-                  messenger.sendNotification(jumpToHighlightNotificationType, HOST_EXTENSION, {
-                    filePath: fileHighlight.filePath,
-                    codeSnippet: highlight.codeSnippet,
-                    codeHash: highlight.codeHash,
-                    fuzzyThreshold: 0.75,
-                    jumpInSplitEditor: true,
-                  });
-                } else {
-                  messenger.sendNotification(jumpToHighlightNotificationType, HOST_EXTENSION, {
-                    filePath: fileHighlight.filePath,
-                    codeSnippet: highlight.codeSnippet,
-                    codeHash: highlight.codeHash,
-                    fuzzyThreshold: 0.75,
-                    jumpInSplitEditor: false,
-                  });
-                }
-              });
-              const jumpButton: HTMLButtonElement | null = card.querySelector(".btn-jump");
-              jumpButton?.addEventListener("click", (e: PointerEvent) => {
-                e.stopPropagation();
-                if (e.altKey) {
-                  messenger.sendNotification(jumpToHighlightNotificationType, HOST_EXTENSION, {
-                    filePath: fileHighlight.filePath,
-                    codeSnippet: highlight.codeSnippet,
-                    codeHash: highlight.codeHash,
-                    fuzzyThreshold: 0.75,
-                    jumpInSplitEditor: true,
-                  });
-                } else {
-                  messenger.sendNotification(jumpToHighlightNotificationType, HOST_EXTENSION, {
-                    filePath: fileHighlight.filePath,
-                    codeSnippet: highlight.codeSnippet,
-                    codeHash: highlight.codeHash,
-                    fuzzyThreshold: 0.75,
-                    jumpInSplitEditor: false,
-                  });
-                }
-              });
-              const tagButton: HTMLButtonElement | null = card.querySelector(".btn-tag");
-              tagButton?.addEventListener("click", (e) => {
-                e.stopPropagation();
-                console.log("Tag button clicked for highlight id:", highlight.id);
-                //   vscode.postMessage({ command: "editTag", id: h.id });
-              });
-              const colorButton: HTMLButtonElement | null = card.querySelector(".btn-color");
-              colorButton?.addEventListener("click", (e) => {
-                e.stopPropagation();
-                console.log("Color button clicked for highlight id:", highlight.id);
-                //   vscode.postMessage({ command: "changeColor", id: h.id });
-              });
-              const deleteButton: HTMLButtonElement | null = card.querySelector(".btn-delete");
-              deleteButton?.addEventListener("click", (e) => {
-                e.stopPropagation();
-                console.log("Delete button clicked for highlight id:", highlight.id);
-                //   vscode.postMessage({ command: "delete", id: h.id });
-              });
-            }
-          }
+        const cardElementId: string = cardElement.dataset.id!;
+        // oxlint-disable-next-line typescript/no-non-null-assertion
+        const cardElementFilePath: string = cardElement.dataset.filePath!;
+        console.log(
+          `Clicked card - cardElementId: ${cardElementId} - cardElementFilePath: ${cardElementFilePath}`,
+        );
+
+        switch (targetElement.id) {
+          // case "btn-jump":
+          //   console.log("Jump button clicked for cardElement.dataset.id:", cardElement.dataset.id);
+          //   break;
+          case "btn-tag":
+            console.log(
+              `Tag button clicked - cardElementId: ${cardElementId} - cardElementFilePath: ${cardElementFilePath}`,
+            );
+            break;
+          case "btn-color":
+            console.log(
+              `Color button clicked - cardElementId: ${cardElementId} - cardElementFilePath: ${cardElementFilePath}`,
+            );
+            break;
+          case "btn-delete":
+            console.log(
+              `Delete button clicked - cardElementId: ${cardElementId} - cardElementFilePath: ${cardElementFilePath}`,
+            );
+            break;
+          default:
+            console.log(
+              `DEFAULT - Card clicked - cardElementId: ${cardElementId} - cardElementFilePath: ${cardElementFilePath}`,
+            );
+          // if (e.altKey) {
+          //   messenger.sendNotification(jumpToHighlightNotificationType, HOST_EXTENSION, {
+          //     id: cardElementId,
+          //     filePath: cardElementFilePath,
+          //     // oxlint-disable-next-line typescript/no-non-null-assertion
+          //     // filePath: fileHighlight.filePath,
+          //     // codeSnippet: highlight.codeSnippet,
+          //     // codeHash: highlight.codeHash,
+          //     fuzzyThreshold: 0.75,
+          //     jumpInSplitEditor: true,
+          //   });
+          // } else {
+          //   messenger.sendNotification(jumpToHighlightNotificationType, HOST_EXTENSION, {
+          //     id: cardElementId,
+          //     filePath: cardElementFilePath,
+          //     // filePath: fileHighlight.filePath,
+          //     // codeSnippet: highlight.codeSnippet,
+          //     // codeHash: highlight.codeHash,
+          //     fuzzyThreshold: 0.75,
+          //     jumpInSplitEditor: false,
+          //   });
+          // }
         }
       }
-    }
+    });
+
+    // Bind card events
+    // const renderedCardsList: NodeListOf<HTMLDivElement> = cardListElement.querySelectorAll(".card");
+    // for (let i: number = 0; i < renderedCardsList.length; i++) {
+    //   // oxlint-disable-next-line typescript/no-non-null-assertion
+    //   const renderedCard: HTMLDivElement = renderedCardsList[i]!;
+    //   // oxlint-disable-next-line legibility/no-single-use-renaming-alias
+    //   const renderedCardId: string | undefined = renderedCard.dataset.id;
+    //   for (let j: number = 0; j < filteredFileHighlights.length; j++) {
+    //     // oxlint-disable-next-line typescript/no-non-null-assertion
+    //     const fileHighlight: FileHighlightsViewModel = filteredFileHighlights[j]!;
+    //     const fileHighlightHighlights: HighlightViewModel[] = fileHighlight.highlights;
+    //     for (let k: number = 0; k < fileHighlightHighlights.length; k++) {
+    //       // oxlint-disable-next-line typescript/no-non-null-assertion
+    //       const highlight: HighlightViewModel = fileHighlightHighlights[k]!;
+    //       if (highlight.id === renderedCardId) {
+    //         const card: HTMLDivElement | undefined = renderedCardsList[i];
+    //         if (card) {
+    //           card.addEventListener("click", (e: PointerEvent) => {
+    //             console.log("Clicked card renderedCardId:", renderedCardId);
+    //             // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+    //             if ((e.target as HTMLDivElement | null)?.closest(".card-actions")) {
+    //               return;
+    //             }
+    // if (e.altKey) {
+    //   messenger.sendNotification(jumpToHighlightNotificationType, HOST_EXTENSION, {
+    //     filePath: fileHighlight.filePath,
+    //     codeSnippet: highlight.codeSnippet,
+    //     codeHash: highlight.codeHash,
+    //     fuzzyThreshold: 0.75,
+    //     jumpInSplitEditor: true,
+    //   });
+    // } else {
+    //   messenger.sendNotification(jumpToHighlightNotificationType, HOST_EXTENSION, {
+    //     filePath: fileHighlight.filePath,
+    //     codeSnippet: highlight.codeSnippet,
+    //     codeHash: highlight.codeHash,
+    //     fuzzyThreshold: 0.75,
+    //     jumpInSplitEditor: false,
+    //   });
+    // }
+    //           });
+    //           const jumpButton: HTMLButtonElement | null = card.querySelector(".btn-jump");
+    //           jumpButton?.addEventListener("click", (e: PointerEvent) => {
+    //             e.stopPropagation();
+    //             if (e.altKey) {
+    //               messenger.sendNotification(jumpToHighlightNotificationType, HOST_EXTENSION, {
+    //                 filePath: fileHighlight.filePath,
+    //                 codeSnippet: highlight.codeSnippet,
+    //                 codeHash: highlight.codeHash,
+    //                 fuzzyThreshold: 0.75,
+    //                 jumpInSplitEditor: true,
+    //               });
+    //             } else {
+    //               messenger.sendNotification(jumpToHighlightNotificationType, HOST_EXTENSION, {
+    //                 filePath: fileHighlight.filePath,
+    //                 codeSnippet: highlight.codeSnippet,
+    //                 codeHash: highlight.codeHash,
+    //                 fuzzyThreshold: 0.75,
+    //                 jumpInSplitEditor: false,
+    //               });
+    //             }
+    //           });
+    //           const tagButton: HTMLButtonElement | null = card.querySelector(".btn-tag");
+    //           tagButton?.addEventListener("click", (e) => {
+    //             e.stopPropagation();
+    //             console.log("Tag button clicked for highlight id:", highlight.id);
+    //             //   vscode.postMessage({ command: "editTag", id: h.id });
+    //           });
+    //           const colorButton: HTMLButtonElement | null = card.querySelector(".btn-color");
+    //           colorButton?.addEventListener("click", (e) => {
+    //             e.stopPropagation();
+    //             console.log("Color button clicked for highlight id:", highlight.id);
+    //             //   vscode.postMessage({ command: "changeColor", id: h.id });
+    //           });
+    //           const deleteButton: HTMLButtonElement | null = card.querySelector(".btn-delete");
+    //           deleteButton?.addEventListener("click", (e) => {
+    //             e.stopPropagation();
+    //             console.log("Delete button clicked for highlight id:", highlight.id);
+    //             //   vscode.postMessage({ command: "delete", id: h.id });
+    //           });
+    //         }
+    //       }
+    //     }
+    //   }
+    // }
   }
 
   // Search & Filter
