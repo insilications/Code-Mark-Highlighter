@@ -29,7 +29,7 @@
     "moduleResolution": "bundler",
     "noErrorTruncation": true,
     "noFallthroughCasesInSwitch": true,
-    "noImplicitAny": false,
+    "noImplicitAny": true,
     "noImplicitOverride": true,
     "noImplicitReturns": true,
     "noImplicitThis": true,

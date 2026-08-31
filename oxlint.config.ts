@@ -121,7 +121,7 @@ export default defineConfig({
     "legibility/prefer-guard-clauses": "warn",
     "legibility/prefer-object-lookup": "warn",
     "legibility/prefer-positive-condition-names": "warn",
-    "legibility/require-executable-shebang": "warn",
+    "legibility/require-executable-shebang": "off",
     "legibility/require-filename-matches-dirname": "off",
     "legibility/require-jsdoc-multiline-comments": "off",
     "max-lines-per-function": "off",

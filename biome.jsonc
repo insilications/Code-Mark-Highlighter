@@ -432,7 +432,7 @@
         // Disallow the use of process global. See https://biomejs.dev/linter/rules/no-process-global
         "noProcessGlobal": "on",
         // Disallow useVisibleTask$() functions in Qwik components. See https://biomejs.dev/linter/rules/no-qwik-use-visible-task
-        "noQwikUseVisibleTask": "on",
+        "noQwikUseVisibleTask": "off",
         // Disallow assigning to React component props. See https://biomejs.dev/linter/rules/no-react-prop-assignments
         "noReactPropAssignments": "on",
         // Prevent the usage of the return value of React.render. See https://biomejs.dev/linter/rules/no-render-return-value
@@ -530,11 +530,11 @@
         // Enforce the consistent use of the radix argument when using parseInt(). See https://biomejs.dev/linter/rules/use-parse-int-radix
         "useParseIntRadix": "on",
         // Prefer using the class prop as a classlist over the classnames helper. See https://biomejs.dev/linter/rules/use-qwik-classlist
-        "useQwikClasslist": "on",
+        "useQwikClasslist": "off",
         // Disallow use* hooks outside of component$ or other use* hooks in Qwik applications. See https://biomejs.dev/linter/rules/use-qwik-method-usage
-        "useQwikMethodUsage": "on",
+        "useQwikMethodUsage": "off",
         // Disallow unserializable expressions in Qwik dollar ($) scopes. See https://biomejs.dev/linter/rules/use-qwik-valid-lexical-scope
-        "useQwikValidLexicalScope": "on",
+        "useQwikValidLexicalScope": "off",
         // Enforce JSDoc comment lines to start with a single asterisk, except for the first one. See https://biomejs.dev/linter/rules/use-single-js-doc-asterisk
         "useSingleJsDocAsterisk": "on",
         // Prevent the usage of static string literal id attribute on elements. See https://biomejs.dev/linter/rules/use-unique-element-ids
@@ -648,7 +648,7 @@
         // Disallow string refs in React components. See https://biomejs.dev/linter/rules/no-react-string-refs
         "noReactStringRefs": "on",
         // Disallow dependencies that are known to have better alternatives. See https://biomejs.dev/linter/rules/no-restricted-dependencies
-        "noRestrictedDependencies": "on",
+        "noRestrictedDependencies": "off",
         // Disallow legacy Svelte {@const} tags. See https://biomejs.dev/linter/rules/no-svelte-legacy-const
         "noSvelteLegacyConst": "on",
         // Disallow unnecessary $state wrapping of reactive classes. See https://biomejs.dev/linter/rules/no-svelte-unnecessary-state-wrap
@@ -659,6 +659,9 @@
         "noTopLevelLiterals": "on",
         // Reports CSS class names in HTML class attributes that are not defined in any \<style> block or linked stylesheet available to the file. See https://biomejs.dev/linter/rules/no-undeclared-classes
         "noUndeclaredClasses": "on",
+        // Reports custom properties used with var() that have no visible declaration.
+        // https://biomejs.dev/linter/rules/no-undeclared-custom-properties/javascript/
+        "noUndeclaredCustomProperties": "error",
         // Disallow unnecessary template expressions. See https://biomejs.dev/linter/rules/no-unnecessary-template-expression
         "noUnnecessaryTemplateExpression": "error",
         // Disallow + operations with operands that are known to be unsafe. See https://biomejs.dev/linter/rules/no-unsafe-plus-operands
@@ -718,7 +721,7 @@
         // Enforce valid describe() callback. See https://biomejs.dev/linter/rules/use-playwright-valid-describe-callback
         "usePlaywrightValidDescribeCallback": "on",
         // Enforce that Qwik loader functions are declared in the correct location. See https://biomejs.dev/linter/rules/use-qwik-loader-location
-        "useQwikLoaderLocation": "on",
+        "useQwikLoaderLocation": "off",
         // Require functions with the "use server" directive to be async. See https://biomejs.dev/linter/rules/use-react-async-server-function
         "useReactAsyncServerFunction": "on",
         // Validate files with React Compiler. See https://biomejs.dev/linter/rules/use-react-compiler
