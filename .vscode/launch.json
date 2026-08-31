@@ -12,9 +12,14 @@
       ],
       "outFiles": ["${workspaceFolder}/out/**/*.js"],
       "resolveSourceMapLocations": ["${workspaceFolder}/out/**", "!**/node_modules/**"],
+      "debugWebviews": true,
+      "pauseForSourceMap": true,
+      "showAsyncStacks": true,
+      "skipFiles": ["<node_internals>/**", "**/node_modules/**", "**/resources/app/out/vs/**"],
+      "sourceMapRenames": true,
+      "trace": false,
       "sourceMaps": true,
       "smartStep": true,
-      "skipFiles": ["<node_internals>/**", "/usr/share/code-insiders/**"],
       "preLaunchTask": "bun: build"
     }
   ]

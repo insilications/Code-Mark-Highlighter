@@ -18,7 +18,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Rumit95/Code-Mark-Highlighter.git"
+    "url": "https://github.com/insilications/Code-Mark-Highlighter"
   },
   "publisher": "insilications",
   "type": "module",
@@ -27,7 +27,7 @@
     "build": "bun run clean && bun run build:extension && bun run build:webview",
     "build:extension": "vite build --mode extension",
     "build:webview": "vite build --mode webview",
-    "check": "tsc --build --verbose",
+    "check": "tsc --build --clean && tsc --build --emitDeclarationOnly",
     "clean": "rm -rf out",
     "fmt": "oxfmt --write",
     "fmt:check": "oxfmt --check",
@@ -67,7 +67,7 @@
     "oxlint": "^1.80.0",
     "oxlint-tsgolint": "^7.0.2001",
     "rolldown": "^1.2.6",
-    "typescript": "^7.1.0-dev.20260830.1",
+    "typescript": "^7.1.0-dev.20260831.1",
     "vite": "^8.2.2"
   },
   "contributes": {

@@ -23,7 +23,7 @@
     "inlineSources": false,
     "isolatedDeclarations": false,
     "isolatedModules": true,
-    "lib": ["ES2024", "DOM"],
+    "lib": ["ESNext", "DOM"],
     "module": "ESNext",
     "moduleDetection": "force",
     "moduleResolution": "bundler",
@@ -49,7 +49,7 @@
     "strictBindCallApply": true,
     "strictFunctionTypes": true,
     "strictNullChecks": true,
-    "target": "ES2024",
+    "target": "ESNext",
     "verbatimModuleSyntax": true
   }
 }

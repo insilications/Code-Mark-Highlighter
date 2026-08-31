@@ -87,13 +87,6 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
               `[Code Mark Highlighter] jumpToHighlightNotificationType - Could not find highlight with ID: ${data.id} in file: ${data.filePath}`,
             );
           }
-          // await jumpToHighlight(
-          //   data.filePath,
-          //   data.codeSnippet,
-          //   data.codeHash,
-          //   getFuzzyThreshold(),
-          //   data.jumpInSplitEditor,
-          // );
         },
       ),
       this.messenger.onNotification(webViewReadyNotificationType, (): void => {

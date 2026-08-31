@@ -174,12 +174,3 @@ export interface JumpToHighlightParams {
   fuzzyThreshold: number;
   jumpInSplitEditor: boolean;
 }
-
-// export interface JumpToHighlightParams {
-//   id: JumpParamsTuple[0];
-//   filePath: JumpParamsTuple[1];
-//   // codeSnippet: JumpParamsTuple[1];
-//   // codeHash: JumpParamsTuple[2];
-//   fuzzyThreshold: JumpParamsTuple[2];
-//   jumpInSplitEditor: JumpParamsTuple[3];
-// }
