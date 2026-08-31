@@ -21,6 +21,10 @@ export async function jumpToHighlight(
     return;
   }
 
+  console.log(
+    `[Code Mark Highlighter] jumpToHighlight - Jumping to highlight in file: ${filePath}`,
+  );
+
   const absPath: vscode.Uri = vscode.Uri.joinPath(workspaceRoot, filePath);
   const doc: vscode.TextDocument = await vscode.workspace.openTextDocument(absPath);
 

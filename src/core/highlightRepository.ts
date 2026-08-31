@@ -139,6 +139,31 @@ export class HighlightRepository {
     return this.fileHighlights.get(filePath);
   }
 
+  /** Finds a highlight by its ID within a specific file. Returns undefined if not found. */
+  public findHighlightById(filePath: string, id: string): Highlight | undefined {
+    const highlights: Highlight[] | undefined = this.fileHighlights.get(filePath);
+
+    // oxlint-disable-next-line no-undefined
+    if (highlights === undefined) {
+      // oxlint-disable-next-line no-undefined
+      return undefined;
+    }
+
+    // oxlint-disable-next-line legibility/no-single-use-renaming-alias
+    const highlightsLength: number = highlights.length;
+    for (let i = 0; i < highlightsLength; i++) {
+      // oxlint-disable-next-line typescript/no-non-null-assertion
+      const highlight = highlights[i]!;
+
+      if (highlight.id === id) {
+        return highlight;
+      }
+    }
+
+    // oxlint-disable-next-line no-undefined
+    return undefined;
+  }
+
   /**
    * Adds one Highlight.
    *

@@ -1,7 +1,5 @@
 import type * as vscode from "vscode";
 
-import type { jumpToHighlight } from "@/extension/highlightNavigator";
-
 /**
  * Runtime representation of one bookmark/highlight.
  *
@@ -170,12 +168,18 @@ export interface ColorOption {
   hex: string;
 }
 
-type JumpParamsTuple = Parameters<typeof jumpToHighlight>;
-
 export interface JumpToHighlightParams {
-  filePath: JumpParamsTuple[0];
-  codeSnippet: JumpParamsTuple[1];
-  codeHash: JumpParamsTuple[2];
-  fuzzyThreshold: JumpParamsTuple[3];
-  jumpInSplitEditor: JumpParamsTuple[4];
+  id: string;
+  filePath: string;
+  fuzzyThreshold: number;
+  jumpInSplitEditor: boolean;
 }
+
+// export interface JumpToHighlightParams {
+//   id: JumpParamsTuple[0];
+//   filePath: JumpParamsTuple[1];
+//   // codeSnippet: JumpParamsTuple[1];
+//   // codeHash: JumpParamsTuple[2];
+//   fuzzyThreshold: JumpParamsTuple[2];
+//   jumpInSplitEditor: JumpParamsTuple[3];
+// }

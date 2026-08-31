@@ -393,28 +393,21 @@ declare function acquireVsCodeApi(): VsCodeApi;
             console.log(
               `DEFAULT - Card clicked - cardElementId: ${cardElementId} - cardElementFilePath: ${cardElementFilePath}`,
             );
-          // if (e.altKey) {
-          //   messenger.sendNotification(jumpToHighlightNotificationType, HOST_EXTENSION, {
-          //     id: cardElementId,
-          //     filePath: cardElementFilePath,
-          //     // oxlint-disable-next-line typescript/no-non-null-assertion
-          //     // filePath: fileHighlight.filePath,
-          //     // codeSnippet: highlight.codeSnippet,
-          //     // codeHash: highlight.codeHash,
-          //     fuzzyThreshold: 0.75,
-          //     jumpInSplitEditor: true,
-          //   });
-          // } else {
-          //   messenger.sendNotification(jumpToHighlightNotificationType, HOST_EXTENSION, {
-          //     id: cardElementId,
-          //     filePath: cardElementFilePath,
-          //     // filePath: fileHighlight.filePath,
-          //     // codeSnippet: highlight.codeSnippet,
-          //     // codeHash: highlight.codeHash,
-          //     fuzzyThreshold: 0.75,
-          //     jumpInSplitEditor: false,
-          //   });
-          // }
+            if (e.altKey) {
+              messenger.sendNotification(jumpToHighlightNotificationType, HOST_EXTENSION, {
+                id: cardElementId,
+                filePath: cardElementFilePath,
+                fuzzyThreshold: 0.75,
+                jumpInSplitEditor: true,
+              });
+            } else {
+              messenger.sendNotification(jumpToHighlightNotificationType, HOST_EXTENSION, {
+                id: cardElementId,
+                filePath: cardElementFilePath,
+                fuzzyThreshold: 0.75,
+                jumpInSplitEditor: false,
+              });
+            }
         }
       }
     });
