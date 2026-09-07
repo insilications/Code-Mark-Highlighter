@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+bin/agent-browser-linux-x64 connect 9222
+bin/agent-browser-linux-x64 snapshot -i
+bin/agent-browser-linux-x64 frame e1
+bin/agent-browser-linux-x64 frame "iframe[title='Highlights']"
+
+bin/agent-browser-linux-x64 frame e89
+bin/agent-browser-linux-x64 eval "typeof acquireVsCodeApi"
+
+bin/agent-browser-linux-x64 click @e31
+bin/agent-browser-linux-x64 click @e7
+
+
+- button "🏷 Tag" [ref=e20]
+- button "🎨 Color" [ref=e21]
+- button "🗑" [ref=e22]
+- button "↗ Jump" [ref=e23]
+- button "🏷 Tag" [ref=e24]
+- button "🎨 Color" [ref=e25]
+- button "🗑" [ref=e26]
+- button "↗ Jump" [ref=e27]
+- button "🏷 Tag" [ref=e28]
+- button "🎨 Color" [ref=e29]
+- button "🗑" [ref=e30]
+- button "↗ Jump" [ref=e31]
+- button "🏷 Tag" [ref=e32]
+- button "🎨 Color" [ref=e33]
+- button "🗑" [ref=e34]
+- button "↗ Jump" [ref=e35]
+- button "🏷 Tag" [ref=e36]
+- button "🎨 Color" [ref=e37]
+- button "🗑" [ref=e38]
+
+
+🏷
+🏷
+🏷️
