@@ -224,12 +224,19 @@ body {
   display: flex;
   gap: 1px;
   min-width: 0;
+  opacity: 1;
+}
+
+/* .card-actions {
+  display: flex;
+  gap: 1px;
+  min-width: 0;
   opacity: 0;
   transition: opacity 0.15s;
 }
 .card:hover .card-actions {
   opacity: 1;
-}
+} */
 
 .btn {
   padding: 2px 7px;
