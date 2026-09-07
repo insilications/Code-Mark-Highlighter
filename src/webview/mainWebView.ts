@@ -1,8 +1,7 @@
 // oxlint-disable legibility/no-quadratic-patterns
 
-import { HOST_EXTENSION } from "vscode-messenger-common";
 import { Messenger } from "vscode-messenger-webview";
-import type { VsCodeApi } from "vscode-messenger-webview";
+// import type { VsCodeApi } from "vscode-messenger-webview";
 
 import {
   jumpToHighlightNotificationType,
@@ -13,12 +12,13 @@ import type { FileHighlightsViewModel, HighlightViewModel, WebviewViewModel } fr
 
 import "./mainWebView.css";
 
-declare function acquireVsCodeApi(): VsCodeApi;
+// declare function acquireVsCodeApi(): VsCodeApi;
 
 // This will be run within the WebView itself and cannot access the main VS Code APIs directly.
 ((): void => {
-  const vscode: VsCodeApi = acquireVsCodeApi();
-  const messenger = new Messenger(vscode);
+  // const vscode: VsCodeApi = acquireVsCodeApi();
+  // const messenger = new Messenger(vscode);
+  const messenger = new Messenger();
 
   // oxlint-disable typescript/no-unsafe-type-assertion
   let webviewViewModel: WebviewViewModel = {} as WebviewViewModel;
@@ -390,21 +390,12 @@ declare function acquireVsCodeApi(): VsCodeApi;
             console.log(
               `DEFAULT - Card clicked - cardElementId: ${cardElementId} - cardElementFilePath: ${cardElementFilePath}`,
             );
-            if (e.altKey) {
-              messenger.sendNotification(jumpToHighlightNotificationType, HOST_EXTENSION, {
-                id: cardElementId,
-                filePath: cardElementFilePath,
-                fuzzyThreshold: 0.75,
-                jumpInSplitEditor: true,
-              });
-            } else {
-              messenger.sendNotification(jumpToHighlightNotificationType, HOST_EXTENSION, {
-                id: cardElementId,
-                filePath: cardElementFilePath,
-                fuzzyThreshold: 0.75,
-                jumpInSplitEditor: false,
-              });
-            }
+            messenger.sendExtensionNotification(jumpToHighlightNotificationType, {
+              id: cardElementId,
+              filePath: cardElementFilePath,
+              fuzzyThreshold: 0.75,
+              jumpInSplitEditor: e.altKey,
+            });
         }
       }
     });
@@ -433,5 +424,5 @@ declare function acquireVsCodeApi(): VsCodeApi;
   messenger.start();
 
   //Notify extension we're ready
-  messenger.sendNotification(webViewReadyNotificationType, HOST_EXTENSION);
+  messenger.sendExtensionNotification(webViewReadyNotificationType);
 })();
