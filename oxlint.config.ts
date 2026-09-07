@@ -3,18 +3,18 @@ import { defineConfig } from "oxlint";
 export default defineConfig({
   categories: {
     correctness: "error",
+    nursery: "warn",
     pedantic: "warn",
     perf: "warn",
-    nursery: "warn",
-    suspicious: "warn",
     restriction: "warn",
+    suspicious: "warn",
   },
   env: {
-    vitest: true,
-    jest: true,
-    es2024: true,
-    node: true,
     browser: true,
+    es2024: true,
+    jest: true,
+    node: true,
+    vitest: true,
   },
   ignorePatterns: ["node_modules/", "out/"],
   jsPlugins: [
@@ -30,6 +30,14 @@ export default defineConfig({
     typeAware: true,
     typeCheck: true,
   },
+  overrides: [
+    {
+      files: ["oxlint.config.ts", "oxfmt.config.ts"],
+      rules: {
+        "sort-keys": ["warn", "asc", { caseSensitive: false, minKeys: 2, natural: false }],
+      },
+    },
+  ],
   plugins: ["typescript", "eslint", "oxc", "jsdoc", "unicorn", "node", "promise", "import"],
   rules: {
     complexity: "off",
@@ -194,6 +202,7 @@ export default defineConfig({
     "no-unassigned-vars": ["warn"],
     "no-undef": ["error"],
     "no-unexpected-multiline": "error",
+    "no-unmodified-loop-condition": ["error", { checkConditionalExpressions: true }],
     "no-unreachable": "error",
     "no-unsafe-finally": "error",
     "no-unsafe-negation": "error",
@@ -303,6 +312,7 @@ export default defineConfig({
     "regexp/strict": "error",
     "regexp/use-ignore-case": "error",
     "require-yield": "error",
+    "sort-keys": "off",
     "typescript/adjacent-overload-signatures": "error",
     "typescript/array-type": "error",
     "typescript/await-thenable": "error",
