@@ -655,6 +655,9 @@
         "noSvelteUnnecessaryStateWrap": "on",
         // Disallow arbitrary values in Tailwind CSS utility classes. See https://biomejs.dev/linter/rules/no-tailwind-arbitrary-value
         "noTailwindArbitraryValue": "on",
+        // Disallow `this` outside of classes.
+        // https://biomejs.dev/linter/rules/no-this-outside-of-class/javascript/
+        "noThisOutsideOfClass": "error",
         // Require the JSON top-level value to be an array or object. See https://biomejs.dev/linter/rules/no-top-level-literals
         "noTopLevelLiterals": "on",
         // Reports CSS class names in HTML class attributes that are not defined in any \<style> block or linked stylesheet available to the file. See https://biomejs.dev/linter/rules/no-undeclared-classes
@@ -706,6 +709,10 @@
         "useExplicitReturnType": "on",
         // Enforce types in functions, methods, variables, and parameters. See https://biomejs.dev/linter/rules/use-explicit-type
         "useExplicitType": "on",
+        // Prefer flat Math.min() and Math.max() calls over nested calls of the same method.
+        // Math.min() and Math.max() accept any number of arguments, so nesting the same call is unnecessary.
+        // https://biomejs.dev/linter/rules/use-flat-math-min-max/javascript/
+        "useFlatMathMinMax": "error",
         // Enforce the 'sandbox' attribute for 'iframe' elements. See https://biomejs.dev/linter/rules/use-iframe-sandbox
         "useIframeSandbox": "on",
         // Enforce that all imports appear at the top of the module. See https://biomejs.dev/linter/rules/use-imports-first
