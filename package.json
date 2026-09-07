@@ -41,6 +41,7 @@
     "lint:oxlint:fix": "oxlint --fix",
     "lint:oxlint:full": "oxlint",
     "lint:oxlint:sarif": "oxlint --format=sarif",
+    "package": "vsce package --no-dependencies",
     "vscode:prepublish": "bun run build"
   },
   "dependencies": {
@@ -129,7 +130,7 @@
   ],
   "icon": "resources/devmarks-icon.png",
   "engines": {
-    "vscode": "^1.134.0"
+    "vscode": "^1.136.0"
   },
   "trustedDependencies": [
     "core-js-bundle",
