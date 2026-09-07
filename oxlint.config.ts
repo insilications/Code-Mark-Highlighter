@@ -245,6 +245,7 @@ export default defineConfig({
     "prefer-arrow-callback": ["warn"],
     "prefer-const": ["warn"],
     "prefer-object-has-own": "warn",
+    "prefer-object-spread": "warn",
     "prefer-regex-literals": "error",
     "prefer-spread": ["error"],
     "prefer-template": ["warn"],
@@ -339,6 +340,11 @@ export default defineConfig({
     "typescript/no-explicit-any": "error",
     "typescript/no-extra-non-null-assertion": "error",
     "typescript/no-extraneous-class": "error",
+    "typescript/no-floating-promises": [
+      "warn",
+      // biome-ignore lint/style/useNamingConvention: The default configuration for this rule
+      { checkThenables: true, ignoreIIFE: false, ignoreVoid: true },
+    ],
     "typescript/no-for-in-array": "error",
     "typescript/no-implied-eval": "error",
     "typescript/no-import-type-side-effects": "warn",
@@ -473,6 +479,7 @@ export default defineConfig({
     "unicorn/prefer-query-selector": "off",
     "unicorn/prefer-regexp-test": "warn",
     "unicorn/prefer-single-call": "warn",
+    "unicorn/prefer-spread": "error",
     "unicorn/prefer-string-replace-all": "warn",
     "unicorn/prefer-string-slice": "warn",
     "unicorn/prefer-top-level-await": "warn",

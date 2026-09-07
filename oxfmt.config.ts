@@ -4,6 +4,7 @@ export default defineConfig({
   arrowParens: "always",
   bracketSpacing: true,
   embeddedLanguageFormatting: "auto",
+  experimentalOperatorPosition: "end",
   ignorePatterns: [
     "pnpm-lock.yaml",
     "package-lock.json",
@@ -46,5 +47,4 @@ export default defineConfig({
   tabWidth: 2,
   trailingComma: "all",
   useTabs: false,
-  experimentalOperatorPosition: "end",
 });
