@@ -44,30 +44,30 @@
     "vscode:prepublish": "bun run build"
   },
   "dependencies": {
-    "@apidevtools/json-schema-ref-parser": "^16.0.1",
+    "@apidevtools/json-schema-ref-parser": "^16.0.2",
     "@vscode-elements/elements": "file:../elements",
-    "@vscode/codicons": "^0.0.46-38",
+    "@vscode/codicons": "^0.0.46-39",
     "litedent": "^0.1.0",
-    "vscode-messenger": "^0.6.1",
-    "vscode-messenger-common": "^0.6.1",
-    "vscode-messenger-webview": "^0.6.1"
+    "vscode-messenger": "^0.7.0",
+    "vscode-messenger-common": "^0.7.0",
+    "vscode-messenger-webview": "^0.7.0"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.5.11",
+    "@biomejs/biome": "^2.5.12",
     "@faker-js/faker": "^10.6.0",
-    "@types/bun": "^1.4.0",
-    "@types/node": "^26.4.0",
-    "@types/vscode": "^1.134.0",
+    "@types/bun": "^1.4.1",
+    "@types/node": "^26.5.0",
+    "@types/vscode": "^1.136.0",
     "dereference-json-schema": "^0.2.3",
-    "eslint": "^10.9.1",
-    "eslint-plugin-legibility": "^0.3.5",
+    "eslint": "^10.10.0",
+    "eslint-plugin-legibility": "^0.4.0",
     "eslint-plugin-regexp": "^3.2.0",
     "json-schema-faker": "^0.6.3",
-    "oxfmt": "^0.65.0",
-    "oxlint": "^1.80.0",
+    "oxfmt": "^0.66.0",
+    "oxlint": "^1.81.0",
     "oxlint-tsgolint": "^7.0.2001",
     "rolldown": "^1.2.6",
-    "typescript": "^7.1.0-dev.20260831.1",
+    "typescript": "^7.1.0-dev.20260907.1",
     "vite": "^8.2.2"
   },
   "contributes": {
@@ -129,7 +129,7 @@
   ],
   "icon": "resources/devmarks-icon.png",
   "engines": {
-    "vscode": "^1.125.0"
+    "vscode": "^1.134.0"
   },
   "trustedDependencies": [
     "core-js-bundle",
