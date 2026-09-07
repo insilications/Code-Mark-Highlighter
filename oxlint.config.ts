@@ -385,7 +385,10 @@ export default defineConfig({
     "typescript/prefer-nullish-coalescing": "warn",
     "typescript/prefer-optional-chain": ["warn"],
     "typescript/prefer-promise-reject-errors": ["warn"],
-    "typescript/prefer-readonly-parameter-types": "off",
+    "typescript/prefer-readonly-parameter-types": [
+      "warn",
+      { checkParameterProperties: true, ignoreInferredTypes: false, treatMethodsAsReadonly: false },
+    ],
     "typescript/prefer-reduce-type-parameter": "error",
     "typescript/prefer-return-this-type": "error",
     "typescript/prefer-string-starts-ends-with": ["warn", { allowSingleElementEquality: "always" }],
